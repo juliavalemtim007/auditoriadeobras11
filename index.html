@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Auditorias de Qualidade — Método</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ===== >>> AJUSTE O LAYOUT AQUI <<< — cores, fontes, cantos ===== */
+  :root{
+    --ink:#FFFFFF; --surface:#F6F8FB; --raised:#EEF2F7; --line:#DCE3EC;
+    --text:#182231; --muted:#5F6C7E; --muted-2:#93A0B0;
+    --signal:#0E9DB6; --signal-dim:#8AD4E0;
+    --conforme:#1E9D63; --na:#7A8798; --grave:#D23B40; --moderado:#C2781C; --leve:#A88F12;
+    --obras:#0E9DB6; --scala:#5B5BD6;
+    --font-title:'Space Grotesk', system-ui, sans-serif; --font-body:'Inter', system-ui, sans-serif;
+    --radius:12px; --shadow:0 1px 2px rgba(24,34,49,.04), 0 6px 20px rgba(24,34,49,.07);
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{background:var(--ink);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,.num{font-family:var(--font-title);} .num{font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+  .hidden{display:none !important;} button{font-family:inherit;}
+
+  header{position:sticky;top:0;z-index:40;background:linear-gradient(180deg,#FFFFFF,#FBFCFE);border-bottom:1px solid var(--line);padding:14px 22px;}
+  #viewAudit header{position:static;}
+  #viewAudit .tabs{position:sticky;top:0;z-index:35;background:var(--ink);margin-top:0;padding:12px 0;border-bottom:1px solid var(--line);}
+  .head-row{display:flex;align-items:center;gap:20px;justify-content:space-between;max-width:1160px;margin:0 auto;flex-wrap:wrap;}
+  .brand h1{font-size:18px;font-weight:600;margin:0;letter-spacing:-.01em;}
+  .brand p{margin:2px 0 0;color:var(--muted);font-size:12.5px;}
+  .brand .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--signal);margin-right:8px;vertical-align:middle;box-shadow:0 0 8px rgba(14,157,182,.5);}
+
+  .act{border:1px solid var(--line);background:#FFFFFF;color:var(--text);border-radius:9px;padding:9px 16px;font-family:var(--font-title);font-size:13px;font-weight:500;cursor:pointer;transition:all .13s;}
+  .act:hover{border-color:var(--muted-2);background:var(--surface);}
+  .act.primary{background:var(--signal);border-color:var(--signal);color:#FFFFFF;font-weight:600;} .act.primary:hover{background:#0c8ba1;}
+  .act.ghost{background:none;} .act.danger:hover{border-color:var(--grave);color:var(--grave);} .act.sm{padding:6px 11px;font-size:12px;}
+
+  .wrap{max-width:1160px;margin:0 auto;padding:22px;}
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:15px 17px;cursor:pointer;transition:border-color .15s;}
+  .stat:hover{border-color:var(--muted-2);} .stat.active{border-color:var(--signal);box-shadow:0 0 0 1px var(--signal) inset;}
+  .stat .n{font-family:var(--font-title);font-size:28px;font-weight:700;line-height:1;} .stat .l{font-size:12px;color:var(--muted);margin-top:6px;} .stat .accent{width:26px;height:3px;border-radius:2px;margin-top:10px;}
+
+  .rec-title{font-size:13px;font-weight:600;letter-spacing:.05em;color:var(--muted);margin:2px 0 10px;font-family:var(--font-title);}
+  .rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px;}
+  .rec-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px 16px;}
+  .rec-h{font-family:var(--font-title);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;}
+  .rec-item{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line);} .rec-item:first-of-type{border-top:none;}
+  .rec-cnt{flex-shrink:0;min-width:22px;height:22px;border-radius:6px;color:#fff;font-family:var(--font-title);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px;}
+  .rec-txt{font-size:12.5px;line-height:1.35;color:var(--text);} .rec-empty{font-size:12.5px;color:var(--muted-2);padding:6px 0;}
+  @media(max-width:820px){.rec-grid{grid-template-columns:1fr;}}
+  .list-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;} .list-head h2{font-size:14px;font-weight:600;margin:0;letter-spacing:.05em;color:var(--muted);}
+  table.audits{width:100%;border-collapse:collapse;}
+  table.audits th{text-align:left;font-size:11px;color:var(--muted-2);font-weight:500;letter-spacing:.04em;padding:0 14px 9px;border-bottom:1px solid var(--line);}
+  table.audits td{padding:13px 14px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle;}
+  table.audits tr.row{cursor:pointer;transition:background .12s;} table.audits tr.row:hover td{background:var(--surface);}
+  .contract-cell{font-weight:600;} .sub-cell{color:var(--muted);font-size:12.5px;}
+  .mbadge{font-family:var(--font-title);font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:6px;white-space:nowrap;}
+  .mbadge.obras{background:rgba(14,157,182,.12);color:#0b7d92;} .mbadge.scala{background:rgba(91,91,214,.12);color:#4a4ab8;}
+  .mini-bar{width:70px;height:5px;background:var(--raised);border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px;} .mini-fill{height:100%;background:linear-gradient(90deg,var(--signal-dim),var(--signal));border-radius:99px;}
+  .nota-cell{font-family:var(--font-title);font-weight:700;font-size:16px;}
+  .badge{font-family:var(--font-title);font-size:11.5px;font-weight:600;padding:4px 11px;border-radius:7px;white-space:nowrap;display:inline-block;}
+  .badge.aberta{background:rgba(122,135,152,.14);color:#56606f;} .badge.andamento{background:rgba(14,157,182,.12);color:#0b7d92;} .badge.concluida{background:rgba(30,157,99,.14);color:#157a4b;}
+  .del{background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:16px;padding:4px 8px;border-radius:6px;} .del:hover{color:var(--grave);background:rgba(210,59,64,.08);}
+  .empty{text-align:center;padding:56px 20px;color:var(--muted);} .empty p{margin:0 0 16px;}
+
+  .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;letter-spacing:.02em;} .field label .req{color:var(--grave);}
+  .field input,.field select{width:100%;background:#FFFFFF;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 11px;font-family:inherit;font-size:14px;outline:none;transition:border-color .15s;}
+  .field input:focus,.field select:focus{border-color:var(--signal);} .field input.err,.field select.err{border-color:var(--grave);background:rgba(210,59,64,.04);}
+  .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235F6C7E' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;}
+  .field input::placeholder{color:var(--muted-2);}
+  .coord-wrap{display:flex;gap:6px;} .coord-wrap select{flex:1;} .coord-add{border:1px solid var(--line);background:#fff;border-radius:9px;width:38px;cursor:pointer;color:var(--signal);font-size:18px;font-weight:600;} .coord-add:hover{background:var(--surface);}
+
+  .score-cap{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 18px;box-shadow:var(--shadow);}
+  .score-main{text-align:right;} .score-main .val{font-size:30px;font-weight:700;line-height:1;transition:color .25s;} .score-main .lbl{font-size:10.5px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.09em;}
+  .result-badge{font-family:var(--font-title);font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:8px;white-space:nowrap;}
+  .saved{font-size:11.5px;color:var(--muted-2);display:flex;align-items:center;gap:6px;margin-top:6px;transition:color .3s;} .saved.on{color:var(--conforme);} .saved .tick{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+  .meta{max-width:1160px;margin:12px auto 0;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+  .notes-matrix{max-width:1160px;margin:14px auto 0;overflow-x:auto;}
+  table.nm{border-collapse:collapse;width:100%;min-width:520px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  table.nm th,table.nm td{padding:9px 12px;font-size:13px;text-align:center;border-bottom:1px solid var(--line);border-right:1px solid var(--line);}
+  table.nm th{background:#eef2f7;font-family:var(--font-title);font-size:11px;letter-spacing:.03em;color:var(--muted);font-weight:600;text-transform:uppercase;}
+  table.nm td:first-child,table.nm th:first-child{text-align:left;} table.nm tr:last-child td{border-bottom:none;} table.nm td:last-child,table.nm th:last-child{border-right:none;}
+  table.nm .who{font-family:var(--font-title);font-weight:600;color:var(--text);} table.nm .who small{display:block;font-weight:400;color:var(--muted);font-size:11px;}
+  table.nm .v{font-family:var(--font-title);font-weight:700;font-size:15px;} table.nm .final{background:rgba(14,157,182,.05);}
+
+  .progress-wrap{max-width:1160px;margin:14px auto 0;}
+  .progress-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;} .progress-top .p-lbl{font-size:12.5px;color:var(--muted);} .progress-top .p-lbl b{color:var(--text);font-family:var(--font-title);font-weight:600;}
+  .bar{height:6px;background:var(--raised);border-radius:99px;overflow:hidden;} .bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--signal-dim),var(--signal));border-radius:99px;transition:width .35s;}
+
+  .tabs{max-width:1160px;margin:18px auto 0;display:flex;gap:8px;flex-wrap:wrap;}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 15px;font-family:var(--font-title);font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .13s;}
+  .tab:hover{border-color:var(--muted-2);color:var(--text);} .tab.active{background:var(--signal);border-color:var(--signal);color:#fff;} .tab .cnt{font-size:11px;opacity:.7;margin-left:5px;}
+
+  main.audit-main{max-width:1160px;margin:0 auto;padding:6px 22px 120px;}
+  .cathead{font-family:var(--font-title);font-size:11.5px;font-weight:600;letter-spacing:.06em;color:var(--signal);text-transform:uppercase;padding:8px 0;border-bottom:1px solid var(--line);margin-top:14px;}
+  .crit{padding:15px 0;border-bottom:1px solid var(--line);}
+  .crit-text{font-size:14.5px;margin-bottom:2px;} .crit-text .code{font-family:var(--font-title);font-size:11px;color:var(--muted-2);font-weight:600;margin-right:8px;}
+  .crit-sub{font-size:11.5px;color:var(--muted);margin-bottom:11px;}
+  .evalrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:7px 0;}
+  .evalrow .who{font-family:var(--font-title);font-size:12.5px;font-weight:600;width:150px;flex-shrink:0;} .evalrow .who small{display:block;font-weight:400;color:var(--muted);}
+  .verdicts{display:flex;gap:6px;}
+  .vbtn{border:1px solid var(--line);background:#FFFFFF;color:var(--muted);border-radius:8px;padding:7px 12px;font-family:var(--font-title);font-size:12px;font-weight:500;cursor:pointer;transition:all .13s;white-space:nowrap;}
+  .vbtn:hover{border-color:var(--muted-2);color:var(--text);}
+  .vbtn.sel-conforme{background:rgba(30,157,99,.12);border-color:var(--conforme);color:#157a4b;}
+  .vbtn.sel-na{background:rgba(122,135,152,.14);border-color:var(--na);color:#56606f;}
+  .vbtn.sel-nc{background:rgba(210,59,64,.10);border-color:var(--grave);color:#b32a2f;}
+  .nc-extra{width:100%;flex-basis:100%;display:none;flex-direction:column;gap:8px;margin-top:4px;padding-left:2px;}
+  .nc-extra.on{display:flex;}
+  .of-sel{background:#FFF;border:1px solid var(--grave);color:var(--text);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12.5px;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23b32a2f' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+  .of-sel.pending{background:rgba(210,59,64,.05);}
+  .of-obs{background:#FFF;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12.5px;resize:vertical;min-height:44px;outline:none;transition:border-color .15s;}
+  .of-obs:focus{border-color:var(--signal);} .of-obs::placeholder{color:var(--muted-2);}
+
+  .foot{position:fixed;bottom:0;left:0;right:0;z-index:40;background:linear-gradient(0deg,#FFFFFF 60%,rgba(255,255,255,.85));border-top:1px solid var(--line);backdrop-filter:blur(8px);padding:12px 22px;}
+  .foot-inner{max-width:1160px;margin:0 auto;display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap;} .foot .status{display:flex;align-items:center;gap:10px;font-size:13px;} .foot-actions{display:flex;gap:9px;}
+
+  dialog{border:1px solid var(--line);background:#FFFFFF;color:var(--text);border-radius:16px;padding:0;max-width:620px;width:94vw;box-shadow:0 20px 60px rgba(24,34,49,.25);}
+  dialog::backdrop{background:rgba(24,34,49,.35);}
+  .dlg-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;} .dlg-head h3{margin:0;font-size:16px;font-weight:600;}
+  .dlg-body{padding:20px 22px;} .dlg-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;} .dlg-grid .full{grid-column:1/-1;}
+  .dlg-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:20px;}
+  .dlg-body textarea.exp{width:100%;height:240px;background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px;font-family:var(--font-title),monospace;font-size:11.5px;line-height:1.5;resize:vertical;white-space:pre;}
+  .x{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:0 4px;} .x:hover{color:var(--text);}
+
+  @media (max-width:820px){ .stat-row{grid-template-columns:repeat(2,1fr);} .meta{grid-template-columns:repeat(2,1fr);} .dlg-grid{grid-template-columns:1fr;} .evalrow .who{width:auto;} table.audits .hide-sm{display:none;} }
+</style>
+</head>
+<body>
+
+<!-- ==================== DASHBOARD ==================== -->
+<div id="viewDash">
+  <header><div class="head-row">
+    <div class="brand"><h1><span class="dot"></span>Auditorias de Qualidade — Método</h1><p>Gerenciamento de Obras (Varejo) &amp; SCALA · painel</p></div>
+    <button class="act primary" id="btnNew">+ Nova auditoria</button>
+  </div></header>
+  <div class="wrap">
+    <div class="stat-row">
+      <div class="stat" data-filter="todas"><div class="n num" id="cTodas">0</div><div class="l">Todas</div><div class="accent" style="background:var(--muted-2)"></div></div>
+      <div class="stat" data-filter="aberta"><div class="n num" id="cAberta">0</div><div class="l">Abertas</div><div class="accent" style="background:var(--na)"></div></div>
+      <div class="stat" data-filter="andamento"><div class="n num" id="cAndamento">0</div><div class="l">Em andamento</div><div class="accent" style="background:var(--signal)"></div></div>
+      <div class="stat" data-filter="concluida"><div class="n num" id="cConcluida">0</div><div class="l">Concluídas</div><div class="accent" style="background:var(--conforme)"></div></div>
+    </div>
+    <div id="recHost"></div>
+    <div class="list-head"><h2 id="listTitle">TODAS AS AUDITORIAS</h2><div style="display:flex;gap:8px"><button class="act ghost sm" id="btnRefresh">↻ Atualizar</button><button class="act ghost sm" id="btnExportAll">Exportar tabela geral</button></div></div>
+    <div id="tableHost"></div>
+  </div>
+</div>
+
+<!-- ==================== AUDIT SCREEN ==================== -->
+<div id="viewAudit" class="hidden">
+  <header>
+    <div class="head-row">
+      <div class="brand">
+        <button class="act ghost sm" id="btnBack" style="margin-bottom:8px;">← Painel</button>
+        <h1 id="aTitle" style="font-size:16px;"></h1><p id="aSubtitle"></p>
+        <div class="saved" id="savedInd"><span class="tick"></span><span id="savedTxt">Progresso salvo automaticamente</span></div>
+      </div>
+      <div class="score-cap"><div class="result-badge" id="resultBadge">—</div><div class="score-main"><div class="val num" id="notaGeral">3,00</div><div class="lbl">Nota geral</div></div></div>
+    </div>
+    <div class="meta" id="metaGrid">
+      <div class="field" data-fld="auditor"><label>Auditor</label><input id="m-auditor" placeholder="Nome" /></div>
+      <div class="field" data-fld="proc"><label>Nº Processo FAST</label><input id="m-proc" placeholder="Nº" /></div>
+      <div class="field" data-fld="contrato"><label>Contrato</label><select id="m-contrato"></select></div>
+      <div class="field" data-fld="regional"><label>Regional</label><select id="m-regional"></select></div>
+      <div class="field" data-fld="obra"><label>Nome da obra</label><input id="m-obra" placeholder="Nome da obra" /></div>
+      <div class="field" data-fld="coord"><label>Coordenador</label><div class="coord-wrap"><select id="m-coord"></select><button class="coord-add" id="m-coordadd" title="Adicionar coordenador">+</button></div></div>
+      <div class="field" data-fld="junc"><label>Junção / Cód. Und</label><input id="m-junc" placeholder="Código" /></div>
+      <div class="field" data-fld="agencia"><label>Agência Local</label><input id="m-agencia" placeholder="Local" /></div>
+      <div class="field" data-fld="data"><label>Data da Auditoria</label><input id="m-data" type="date" /></div>
+      <div class="field" data-fld="gestor"><label>Nome do Gestor <span class="req rq-g">*</span></label><input id="m-gestor" placeholder="Nome" /></div>
+      <div class="field" data-fld="gi"><label>Gestão Integrada</label><select id="m-gi"><option>Sim</option><option>Não</option></select></div>
+      <div class="field" data-fld="ginome"><label>Nome do Gestor GI <span class="req">*</span></label><input id="m-ginome" placeholder="Obrigatório" /></div>
+    </div>
+    <div class="notes-matrix" id="notesMatrix"></div>
+    <div class="progress-wrap">
+      <div class="progress-top"><span class="p-lbl"><b id="pDone">0</b> de <b id="pTotal">0</b> avaliações</span><span class="p-lbl num" id="pPct">0%</span></div>
+      <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+  </header>
+  <main class="audit-main" id="critHost"></main>
+  <div class="foot"><div class="foot-inner">
+    <div class="status"><span class="badge" id="statusPill">Aberta</span><span class="num" id="statusNote" style="color:var(--muted);font-size:12.5px;"></span></div>
+    <div class="foot-actions"><button class="act sm" id="btnExportOne">Exportar tabela</button><button class="act primary sm" id="btnFinalize">Concluir auditoria</button></div>
+  </div></div>
+</div>
+
+<dialog id="newDlg">
+  <div class="dlg-head"><h3>Nova auditoria</h3><button class="x" id="newClose">&times;</button></div>
+  <div class="dlg-body"><div class="dlg-grid">
+    <div class="field full"><label>Modelo de auditoria</label><select id="n-modelo"><option value="obras">Gerenciamento de Obras (Varejo)</option><option value="scala">SCALA — Datacenter</option></select></div>
+    <div class="field full" data-nfld="contrato"><label>Contrato</label><select id="n-contrato"></select></div>
+    <div class="field" data-nfld="regional"><label>Regional</label><select id="n-regional"></select></div>
+    <div class="field" data-nfld="obra"><label>Nome da obra</label><input id="n-obra" placeholder="Nome da obra" /></div>
+    <div class="field" data-nfld="coord"><label>Coordenador</label><div class="coord-wrap"><select id="n-coord"></select><button class="coord-add" id="n-coordadd" title="Adicionar">+</button></div></div>
+    <div class="field" data-nfld="gestor"><label>Nome do Gestor <span class="req rq-g">*</span></label><input id="n-gestor" placeholder="Nome" /></div>
+    <div class="field" data-nfld="gi"><label>Gestão Integrada</label><select id="n-gi"><option>Sim</option><option>Não</option></select></div>
+    <div class="field full" data-nfld="ginome"><label>Nome do Gestor GI <span class="req">*</span></label><input id="n-ginome" placeholder="Obrigatório" /></div>
+    <div class="field" data-nfld="data"><label>Data da auditoria</label><input id="n-data" type="date" /></div>
+  </div><div class="dlg-actions"><button class="act" id="newCancel">Cancelar</button><button class="act primary" id="newCreate">Criar e abrir</button></div></div>
+</dialog>
+
+<dialog id="expDlg">
+  <div class="dlg-head"><h3 id="expTitle">Exportar</h3><button class="x" id="expClose">&times;</button></div>
+  <div class="dlg-body"><p style="color:var(--muted);font-size:13.5px;margin-top:0;">Tabela em CSV (ponto-e-vírgula). Abre no Excel como planilha — gestores, notas, ofensores e observações.</p>
+    <textarea class="exp" id="expArea" readonly></textarea>
+    <div class="dlg-actions"><button class="act" id="expDownload">Baixar .csv</button><button class="act primary" id="expCopy">Copiar</button></div>
+  </div>
+</dialog>
+
+<script>
+/* ================================================================
+   >>> MODO NUVEM (compartilhado por link) <<<
+   Preencha as duas chaves abaixo com os dados do seu projeto Supabase
+   (gratuito). Com elas preenchidas, TODAS as auditorias ficam salvas
+   num único banco na nuvem: qualquer pessoa que abrir o link preenche
+   e enxerga o mesmo histórico. Deixe em branco para usar salvamento
+   local (só no navegador de quem abre).
+   Passo a passo de como obter estas chaves e publicar a página:
+   veja a mensagem do Claude que acompanha este arquivo.
+   ================================================================ */
+const SUPABASE_URL = "";   // ex.: https://xxxxxxxx.supabase.co
+const SUPABASE_KEY = "";   // chave "anon public" do projeto
+const CLOUD = !!(SUPABASE_URL && SUPABASE_KEY);
+
+/* ================================================================
+   LISTAS SUSPENSAS — edite com seus valores reais
+   ================================================================ */
+const CONTRATOS = ["Localiza","Santander","Itaú","Zamp","AutoZone","TIVIO"];
+const REGIONAIS = ["Sudeste","Sul","Nordeste","Centro-Oeste","Norte"];
+const COORD_PADRAO = ["Leticia Sposito","Lorenna Khiara","Hugo Silva","Alexandre Oliveira"];
+
+const gr=t=>({t,i:"grave"}), mo=t=>({t,i:"moderado"}), le=t=>({t,i:"leve"});
+
+/* ================================================================
+   MODELOS — cada um com seus grupos, critérios e ofensores
+   ================================================================ */
+const MODELS = {
+ obras:{
+  id:"obras", nome:"Gerenciamento de Obras (Varejo)", dual:true, locField:{key:"regional",label:"Regional"},
+  metaFields:["auditor","proc","contrato","regional","coord","junc","agencia","data","gestor","gi","ginome"],
+  matrixOrder:["seg","qual_proc","qual_prod"],
+  grupos:[
+   {id:"qual_prod",label:"Qualidade · Produto",short:"Qualidade\nProduto",eixo:"Qualidade",tipo:"Produto",bucket:"produto",crit:[
+     {id:"QP1",cat:"PROJETO",t:`Projeto utilizado em obra está na revisão vigente e disponível para consulta`,of:[gr(`Projeto em obra não é a última revisão vigente`),mo(`Projeto vigente não está impresso/disponível para consulta em obra`)]},
+     {id:"QP2",cat:"PROJETO",t:`Medidas do local conferem com o projeto`,of:[gr(`Medidas divergentes do projeto, sem justificativa`),mo(`Medidas conferidas, porém sem evidência de registro`)]},
+     {id:"QP3",cat:"LICENÇAS, APROVAÇÕES E SEGUROS",t:`Licenças, ARTs e seguro de obra estão vigentes e disponíveis`,of:[gr(`Pendência de documentação inicial de obra sem justificativa`)]},
+     {id:"QP4",cat:"LICENÇAS, APROVAÇÕES E SEGUROS",t:`Liberações de água e esgoto junto às concessionárias foram providenciadas`,of:[mo(`Acionamento das concessionárias ainda não realizado, sem justificativa`),mo(`Documentação para ligação de água/esgoto pendente, sem justificativa`)]},
+     {id:"QP5",cat:"LICENÇAS, APROVAÇÕES E SEGUROS",t:`Restrições de comunicação visual do local foram identificadas e comunicadas ao cliente`,of:[mo(`Restrições de comunicação visual não verificadas`),gr(`Restrições identificadas, porém não comunicadas ao cliente`)]},
+     {id:"QP6",cat:"CRONOGRAMA E PLANEJAMENTO",t:`Execução está de acordo com o cronograma aprovado`,of:[mo(`Cronograma em atraso, sem plano de ação`),gr(`Execução em obra está divergente do representado no relatório, sem justificativa`),gr(`Cronograma em atraso, sem monitoramento do gestor`)]},
+     {id:"QP7",cat:"MATERIAIS E SUPRIMENTOS",t:`Materiais aplicados em obra conferem com o especificado e foram registrados`,of:[mo(`Materiais utilizados não verificados pelo gestor, sem justificativa`),mo(`Materiais utilizados não registrados`)]},
+     {id:"QP8",cat:"MATERIAIS E SUPRIMENTOS",t:`Suprimentos necessários foram solicitados dentro do prazo e armazenados corretamente`,of:[mo(`Suprimento pendente de solicitação, sem justificativa`),mo(`Suprimento com entrega em atraso, sem plano de ação`),mo(`Materiais armazenados em condição inadequada (exposição a intempéries, risco de dano)`)]},
+     {id:"QP9",cat:"CONSTRUÇÃO",t:`Execução estrutural e de vedações está conforme o projeto`,of:[gr(`Itens executados fora do projeto e não sinalizados ao cliente`),mo(`Erros de execução identificados, sem justificativa`),gr(`Nível do terreno, prumo, esquadro e queda das tubulações não evidenciados nos materiais entregues`)]},
+     {id:"QP10",cat:"INSTALAÇÕES ELÉTRICAS",t:`Instalações elétricas (quadros, rack, aterramento) estão completas, identificadas e testadas`,of:[mo(`Tomadas e cabos sem identificação`),gr(`Ligações fora da norma vigente`),gr(`Itens faltando no quadro/RACK`),gr(`Funcionamento da infraestrutura elétrica não verificado, sem justificativa`)]},
+     {id:"QP11",cat:"INSTALAÇÕES HIDROSSANITÁRIAS",t:`Instalações hidrossanitárias foram testadas e estão em funcionamento`,of:[gr(`Teste de estanqueidade não realizado, sem justificativa`),gr(`Vazamentos identificados, mas sem plano de ação`)]},
+     {id:"QP12",cat:"CLIMATIZAÇÃO (HVAC)",t:`Sistema de climatização foi instalado conforme projeto e testado`,of:[gr(`Sistema sem teste de funcionamento, sem justificativa`),gr(`Sistema testado, sem evidência`),gr(`Dutos/grelhas divergentes do projeto, sem justificativa`)]},
+     {id:"QP13",cat:"PREVENÇÃO E COMBATE A INCÊNDIO (PPCI)",t:`Sistema de prevenção e combate a incêndio está completo e testado`,of:[gr(`Extintor ausente, vencido ou fora da posição prevista, sem justificativa`),gr(`Alarme/detecção de incêndio não testado`),gr(`Rota de fuga obstruída ou sem sinalização`),mo(`Iluminação de emergência não testada, sem justificativa`)]},
+     {id:"QP14",cat:"ACABAMENTOS",t:`Acabamentos executados conferem com o projeto e com o padrão de qualidade esperado`,of:[gr(`Acabamento divergente do projeto, sem justificativa`),mo(`Acabamento mal executado, sem justificativa ou plano de ação`),le(`Falha visível de pintura (respingo, textura irregular, cor divergente), sem plano de ação`),mo(`Revestimento com desnível, quebra ou desalinhamento, sem justificativa ou plano de ação`)]},
+     {id:"QP15",cat:"MOBILIÁRIO E MARCENARIA",t:`Mobiliário e marcenaria foram posicionados/instalados conforme projeto`,of:[gr(`Mobiliário não posicionado, sem justificativa`),mo(`Mobiliário incorreto, sem justificativa`),mo(`Posicionamento incorreto por conta de infraestrutura de piso, sem sinalização ao cliente`),le(`Mobiliário com defeito ou avarias, sem plano de ação`)]},
+     {id:"QP16",cat:"COMUNICAÇÃO VISUAL",t:`Comunicação visual foi instalada conforme especificação e manual de marca`,of:[gr(`Instalação pendente, sem justificativa`),mo(`Itens faltantes, sem plano de ação`),mo(`Instalação em desacordo com o manual de marca`)]},
+     {id:"QP17",cat:"ACESSIBILIDADE",t:`Ambiente atende às normas de acessibilidade (NBR 9050)`,of:[gr(`Rota acessível, rampa ou sanitário PCD fora da norma, sem justificativa`),gr(`Sinalização tátil/visual de acessibilidade ausente, sem justificativa`)]},
+     {id:"QP18",cat:"SEGURANÇA PREDIAL E TI",t:`Sistemas de segurança predial e TI estão instalados, identificados e testados`,of:[gr(`CFTV, alarme ou controle de acesso sem teste de funcionamento, sem justificativa`),le(`Cabeamento de TI/lógica sem identificação, sem justificativa`)]}
+   ]},
+   {id:"qual_proc",label:"Qualidade · Processo",short:"Qualidade\nProcesso",eixo:"Qualidade",tipo:"Processo",bucket:"processo",crit:[
+     {id:"QR1",cat:"ESTRUTURA, STATUS E PRAZOS NO SISTEMA FAST",t:`Estrutura e status da tarefa no sistema refletem a real situação do processo`,of:[gr(`Status incorreto (ex.: cancelado para atividade em andamento/finalizada) ou fora da ordem cronológica`),mo(`Erro no cadastro da estrutura ou nomes incoerentes na tarefa (Gestor/Coordenador)`)]},
+     {id:"QR2",cat:"ESTRUTURA, STATUS E PRAZOS NO SISTEMA FAST",t:`Entregas respeitam o prazo definido ou possuem justificativa válida`,of:[gr(`Atraso na entrega maior que 15 dias, sem justificativa válida`),mo(`Atraso na entrega de até 15 dias, sem justificativa válida`),le(`Atraso na entrega de até 7 dias, sem justificativa válida`)]},
+     {id:"QR3",cat:"ESTRUTURA, STATUS E PRAZOS NO SISTEMA FAST",t:`Diário do processo está atualizado e indicador SGQ (campo ISO) preenchido corretamente`,of:[gr(`Falha ou atraso na atualização do diário do processo`),gr(`Campo ISO não preenchido ou divergente da real situação da entrega`)]},
+     {id:"QR4",cat:"VALIDADE FORMAL DO DOCUMENTO",t:`Documento está na revisão vigente e devidamente assinado`,of:[gr(`Uso de documento em revisão não vigente`),gr(`Documento sem as assinaturas obrigatórias`),mo(`Campo em branco sem indicação de N/A ou traço`)]},
+     {id:"QR5",cat:"VALIDADE FORMAL DO DOCUMENTO",t:`Documento é legível, bem apresentado e segue o padrão de nomenclatura`,of:[gr(`Documento ilegível ou com baixa qualidade de digitalização/preenchimento`),le(`Nomenclatura ou formato do arquivo fora do padrão`)]},
+     {id:"QR6",cat:"COMUNICAÇÃO ESCRITA E E-MAILS",t:`E-mails de programação/tratativas incluem destinatários e anexos obrigatórios`,of:[gr(`Falta de destinatário obrigatório no e-mail`),mo(`E-mail sem os anexos citados no corpo do texto`)]},
+     {id:"QR7",cat:"COMUNICAÇÃO ESCRITA E E-MAILS",t:`Texto do documento é claro, coerente e com justificativas relevantes`,of:[le(`Texto confuso, incoerente ou com erros de digitação/ortografia`),mo(`Falta de justificativa relevante ou de escopo definido no documento`)]},
+     {id:"QR8",cat:"RELATÓRIOS DE VISTORIA E REGISTRO FOTOGRÁFICO",t:`Relatório de vistoria contém as informações obrigatórias da etapa`,of:[gr(`Relatório sem resumo das atividades ou sem descrição/percentual de evolução`),mo(`Pontos de atenção sem plano de ação definido (responsável, prazo)`),gr(`Problema grave identificado na vistoria sem nota de inconformidade associada`)]},
+     {id:"QR9",cat:"RELATÓRIOS DE VISTORIA E REGISTRO FOTOGRÁFICO",t:`Registro fotográfico tem qualidade e corresponde ao relatado`,of:[mo(`Baixa qualidade das fotos ou legenda sem conexão com a imagem`),gr(`Falta de sinergia entre Relatório de Vistoria e Relatório Fotográfico`)]},
+     {id:"QR10",cat:"RASTREABILIDADE DO DIÁRIO DO PROCESSO",t:`Diário do processo registra os eventos relevantes com evidência que os sustente`,of:[gr(`Ausência de registro de evento relevante (acionamento, paralisação, reprogramação, custo extra, inconformidade)`),gr(`Falta de sinergia entre documentos do processo (dados divergentes)`)]},
+     {id:"QR11",cat:"DOCUMENTOS OBRIGATÓRIOS POR ETAPA",t:`Documentos obrigatórios de cada etapa estão completos no processo`,of:[gr(`Documento obrigatório da etapa não localizado no processo`)]}
+   ]},
+   {id:"seg",label:"Segurança",short:"Segurança",eixo:"Segurança",tipo:"—",bucket:"seguranca",crit:[
+     {id:"SG1",cat:"SMS — Documentação inicial",sub:"Produto",t:`Documentação obrigatória de SMS (PGR, PCMSO, PGRCC, Comunicado Prévio de Obras) disponível e de fácil acesso no canteiro`,of:[gr(`Ausência de documentos obrigatórios`)]},
+     {id:"SG2",cat:"SMS — Techsocial (apenas contrato TIVIO)",sub:"Produto",t:`Documentação dos colaboradores liberada pela equipe de SMS/PMO conforme requisitos`,of:[gr(`Colaborador sem liberação da equipe de SMS/PMO; documentação pendente, incompleta, vencida ou em desacordo`)]},
+     {id:"SG3",cat:"SMS — Documentação de atividades de risco",sub:"Produto",t:`APR, PT, certificados de Trabalho em Altura e ASO disponíveis e de fácil acesso no canteiro`,of:[gr(`Ausência de documentos obrigatórios`)]},
+     {id:"SG4",cat:"SMS — EPI",sub:"Produto",t:`Equipe utilizando os EPIs necessários conforme cada tipo de serviço`,of:[gr(`Ausência, uso inadequado ou utilização incorreta de EPIs`)]},
+     {id:"SG5",cat:"SMS — EPC",sub:"Produto",t:`Atividades de risco possuem os EPCs adequados aos perigos identificados`,of:[gr(`Ausência, instalação inadequada, dano ou utilização insuficiente dos EPCs`)]},
+     {id:"SG6",cat:"SMS — Limpeza, organização e resíduos",sub:"Produto",t:`Frentes de serviço limpas e organizadas; resíduos segregados, acondicionados e destinados conforme procedimentos`,of:[mo(`Frentes de serviço desorganizadas ou gestão inadequada de resíduos`)]},
+     {id:"SG7",cat:"SMS — Resíduos (documentação)",sub:"Produto",t:`Documentação final dos resíduos arquivada e em conformidade, incluindo CTRs`,of:[mo(`Ausência, inconsistência ou arquivamento inadequado da documentação final dos resíduos e dos CTRs`)]},
+     {id:"SG8",cat:"SMS — Guia de SMS / Mudanças climáticas",sub:"Processo",t:`Documento entregue e registrado na ata da reunião de início (PG.PROG.2000 – FAST)`,of:[mo(`Documento obrigatório da etapa não localizado no processo`)]},
+     {id:"SG9",cat:"SMS — VAR",sub:"Processo",t:`Aplicativo de segurança (VAR) preenchido corretamente`,of:[gr(`Não evidenciado o preenchimento do aplicativo`)]},
+     {id:"SG10",cat:"SMS — Recursos Humanos",sub:"Processo",t:`Colaborador/gestor possui todos os cursos obrigatórios de SMS válidos e vigentes`,of:[gr(`Curso obrigatório vencido, pendente ou não realizado; ausência de certificado`)]}
+   ]}
+  ]
+ },
+ scala:{
+  id:"scala", nome:"SCALA — Datacenter", dual:false, locField:{key:"obra",label:"Nome da obra"},
+  metaFields:["auditor","obra","coord","data","gestor"],
+  matrixOrder:["processo","desempenho"],
+  grupos:[
+   {id:"processo",label:"Processo",short:"Processo",eixo:"Processo",tipo:"—",bucket:"processo",crit:[
+     {id:"SP1",cat:"PROCESSO",t:`Gestor abriu checklist para toda não conformidade identificada, com classificação correta`,of:[gr(`Não conformidade identificada em campo sem abertura de checklist correspondente`),gr(`Item classificado como FOD quando deveria ser CIL (ou vice-versa), mascarando a criticidade real`)]},
+     {id:"SP2",cat:"PROCESSO",t:`Gestor validou a documentação de fechamento do PA entregue pelo vendor antes de encerrar o item`,of:[gr(`PA encerrado sem validação técnica da documentação entregue pelo vendor`),gr(`Documentação de fechamento aceita mesmo divergente do achado original (evidência não corresponde ao problema)`)]},
+     {id:"SP3",cat:"PROCESSO",t:`Gestor controla o prazo do PA e sinaliza atrasos ao vendor e ao cliente`,of:[mo(`PA com prazo vencido sem comunicação formal ao vendor/cliente`),le(`Ausência de reenvio de cobrança para PAs em atraso recorrente`)]},
+     {id:"SP4",cat:"PROCESSO",t:`Documentação de fechamento entregue pelo vendor resolve tecnicamente o plano de ação original`,of:[gr(`Evidência entregue não corresponde ao achado original`),mo(`Documentação de fechamento incompleta (faltam fotos, laudo ou relatório de teste)`)]},
+     {id:"SP5",cat:"PROCESSO",t:`Itens de responsabilidade do cliente (decisão contratual/escopo) possuem retorno formal registrado`,of:[mo(`Pendência de responsabilidade do cliente sem retorno formal registrado`),le(`Decisão do cliente registrada informalmente (verbal), sem evidência documental`)]}
+   ]},
+   {id:"desempenho",label:"Desempenho",short:"Desempenho",eixo:"Desempenho",tipo:"—",bucket:"produto",crit:[
+     {id:"SD1",cat:"DESEMPENHO",t:`Relatório mensal consolida todos os checklists tratados no período, com status`,of:[gr(`Relatório mensal sem a relação completa dos checklists do período (itens omitidos)`),mo(`Ausência de indicador dos itens pendentes`)]},
+     {id:"SD2",cat:"DESEMPENHO",t:`Relatório apresenta indicadores de desempenho do período (% de PA no prazo, itens críticos em aberto)`,of:[mo(`Relatório sem indicador de % de cumprimento de prazo dos PAs`),gr(`Ausência de destaque para itens críticos ainda em aberto`)]},
+     {id:"SD3",cat:"DESEMPENHO",t:`Relatório está claro, sem erros e serve como registro histórico auditável`,of:[gr(`Dados do relatório divergentes da planilha de controle de checklists`),le(`Relatório com erros de digitação, cálculo ou formatação que dificultem a leitura`)]},
+     {id:"SD4",cat:"DESEMPENHO",t:`Planilha de comissionamento está atualizada com o status das documentações necessárias dos equipamentos`,of:[gr(`Há arquivos pendentes de níveis de comissionamentos anteriores, sem justificativa`),gr(`Há pendência na sequência de preenchimento de alguma coluna, sem justificativa`)]}
+   ]}
+  ]
+ }
+};
+
+const DISCOUNT={grave:1.00,moderado:0.67,leve:0.33};
+const IMPLABEL={grave:"Grave",moderado:"Moderado",leve:"Leve"};
+const BASE=3;
+const BANDS=[
+  {min:2.95,label:"Excelente",color:"#1E9D63",bg:"rgba(30,157,99,.14)"},
+  {min:2.6, label:"Ótimo",    color:"#0E9DB6",bg:"rgba(14,157,182,.12)"},
+  {min:2.0, label:"Regular",  color:"#C2781C",bg:"rgba(194,120,28,.14)"},
+  {min:1.5, label:"Ruim",     color:"#DB6B2E",bg:"rgba(219,107,46,.14)"},
+  {min:-99, label:"Péssimo",  color:"#D23B40",bg:"rgba(210,59,64,.12)"}
+];
+const STORE_KEY="auditoria_obras_varejo_v1"; /* mantém dados das auditorias de obras já criadas */
+const STATUS_LABEL={aberta:"Aberta",andamento:"Em andamento",concluida:"Concluída"};
+
+/* ---------------------------------------------------------------- */
+let store={audits:{},coordenadores:null};
+let currentId=null, dashFilter="todas", activeTab=null;
+const $=s=>document.querySelector(s);
+const hasStore=(typeof window.storage!=="undefined"&&window.storage);
+const uid=()=>"a"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const fmt=n=>n.toFixed(2).replace('.',',');
+const band=n=>BANDS.find(b=>n>=b.min);
+const MOD=a=>MODELS[a.modelo||"obras"];
+
+let saveTimer=null;
+/* ---- Supabase (tabela kv: k text pk, v jsonb) ---- */
+const SB_H={ "apikey":SUPABASE_KEY, "Authorization":"Bearer "+SUPABASE_KEY, "Content-Type":"application/json" };
+async function kvGetAll(){ const r=await fetch(`${SUPABASE_URL}/rest/v1/kv?select=k,v`,{headers:SB_H}); if(!r.ok) throw new Error("GET "+r.status); return r.json(); }
+async function kvSet(k,v){ const r=await fetch(`${SUPABASE_URL}/rest/v1/kv`,{method:"POST",headers:{...SB_H,"Prefer":"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({k,v})}); if(!r.ok) throw new Error("SET "+r.status); }
+async function kvDel(k){ await fetch(`${SUPABASE_URL}/rest/v1/kv?k=eq.${encodeURIComponent(k)}`,{method:"DELETE",headers:SB_H}); }
+
+async function localSaveAll(){ if(hasStore) await window.storage.set(STORE_KEY,JSON.stringify(store)); else localStorage.setItem(STORE_KEY,JSON.stringify(store)); }
+
+async function loadStore(){
+  try{
+    if(CLOUD){
+      const rows=await kvGetAll(); store={audits:{},coordenadores:null};
+      rows.forEach(r=>{ if(r.k==="coordenadores") store.coordenadores=r.v; else if(r.k&&r.k.indexOf("audit:")===0&&r.v) store.audits[r.v.id||r.k.slice(6)]=r.v; });
+    } else if(hasStore){ const r=await window.storage.get(STORE_KEY); if(r&&r.value) store=JSON.parse(r.value); }
+    else { const raw=localStorage.getItem(STORE_KEY); if(raw) store=JSON.parse(raw); }
+  }catch(e){ if(CLOUD) alert("Não consegui conectar ao banco na nuvem. Confira SUPABASE_URL / SUPABASE_KEY e as permissões (RLS) da tabela."); }
+  if(!store.coordenadores) store.coordenadores=COORD_PADRAO.slice();
+  Object.values(store.audits).forEach(a=>{ if(!a.modelo) a.modelo="obras"; }); /* migração */ }
+
+function scheduleSave(){ flashSaving(); clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ if(currentId) persistAudit(currentId); else persistCoords(); },450); }
+async function persistAudit(id){ const a=store.audits[id]; if(!a)return; try{ if(CLOUD) await kvSet("audit:"+id,a); else await localSaveAll(); flashSaved(CLOUD?"Salvo na nuvem · compartilhado":"Progresso salvo automaticamente"); }catch(e){ flashSaved("Não foi possível salvar",true); } }
+async function persistCoords(){ try{ if(CLOUD) await kvSet("coordenadores",store.coordenadores); else await localSaveAll(); }catch(e){} }
+async function persistDelete(id){ try{ if(CLOUD) await kvDel("audit:"+id); else await localSaveAll(); }catch(e){} }
+function flashSaving(){ const i=$("#savedInd"); if(!i)return; i.classList.remove("on"); $("#savedTxt").textContent="Salvando…"; }
+function flashSaved(t,err){ const i=$("#savedInd"); if(!i)return; i.classList.toggle("on",!err); $("#savedTxt").textContent=t; }
+
+function fillSelect(el,opts,val){ el.innerHTML=""; opts.forEach(o=>{ const op=document.createElement("option"); op.value=o; op.textContent=o; el.appendChild(op); }); if(val!=null&&opts.includes(val)) el.value=val; }
+function giOn(a){ return MOD(a).dual && a.meta.gi==="Sim"; }
+function papeis(a){ const arr=[{k:"gestor",lbl:"Gestor",nome:a.meta.gestor}]; if(giOn(a)) arr.push({k:"gi",lbl:"Gestor GI",nome:a.meta.ginome}); return arr; }
+function grupos(a){ return MOD(a).grupos; }
+function allCrit(a){ return grupos(a).flatMap(g=>g.crit); }
+function cell(a,cid,p){ if(!a.answers[cid]) a.answers[cid]={}; if(!a.answers[cid][p]) a.answers[cid][p]={v:null,of:null,obs:""}; return a.answers[cid][p]; }
+function getCell(a,cid,p){ return (a.answers[cid]&&a.answers[cid][p])||{v:null,of:null,obs:""}; }
+
+function grupoNota(a,g,p){ let d=0; g.crit.forEach(c=>{ const x=getCell(a,c.id,p); if(x.v==="nc"&&x.of!=null&&c.of[x.of]) d+=DISCOUNT[c.of[x.of].i]; }); return Math.max(0,BASE-d); }
+function notasPapel(a,p){ const m={}; let sum=0; grupos(a).forEach(g=>{ const n=grupoNota(a,g,p); m[g.id]=n; sum+=n; }); return {grupos:m,final:sum/grupos(a).length}; }
+function notaGeral(a){ const ps=papeis(a); return ps.reduce((s,p)=>s+notasPapel(a,p.k).final,0)/ps.length; }
+function totalCells(a){ return allCrit(a).length*papeis(a).length; }
+function answeredCells(a){ let n=0; allCrit(a).forEach(c=>papeis(a).forEach(p=>{ if(getCell(a,c.id,p.k).v) n++; })); return n; }
+function pendingOf(a){ let n=0; allCrit(a).forEach(c=>papeis(a).forEach(p=>{ const x=getCell(a,c.id,p.k); if(x.v==="nc"&&x.of==null) n++; })); return n; }
+function statusOf(a){ if(a.finalized) return "concluida"; return answeredCells(a)===0?"aberta":"andamento"; }
+function ref(a){ if((a.modelo||"obras")==="scala") return a.meta.obra||a.meta.gestor||"SCALA"; return a.meta.contrato||a.meta.gestor||MOD(a).nome; }
+
+/* ==== Recorrências: critérios com mais não conformidades por bucket ==== */
+function recorrencias(){
+  const b={produto:{},processo:{},seguranca:{}};
+  Object.values(store.audits).forEach(a=>{ MOD(a).grupos.forEach(g=>{ const bk=g.bucket||"produto"; g.crit.forEach(c=>{ papeis(a).forEach(p=>{ const x=getCell(a,c.id,p.k); if(x.v==="nc") b[bk][c.t]=(b[bk][c.t]||0)+1; }); }); }); });
+  const top=o=>Object.entries(o).sort((x,y)=>y[1]-x[1]).slice(0,5);
+  return {produto:top(b.produto),processo:top(b.processo),seguranca:top(b.seguranca)};
+}
+function renderRecorrencias(){
+  const host=$("#recHost"); if(!host)return; const R=recorrencias();
+  const defs=[["produto","Produto","#5B5BD6"],["processo","Processo","#0E9DB6"],["seguranca","Segurança","#C2781C"]];
+  if(!(R.produto.length||R.processo.length||R.seguranca.length)){ host.innerHTML=""; return; }
+  let h=`<div class="rec-title">NÃO CONFORMIDADES MAIS RECORRENTES</div><div class="rec-grid">`;
+  defs.forEach(([k,lbl,col])=>{ h+=`<div class="rec-card"><div class="rec-h" style="color:${col}">${lbl}</div>`;
+    if(!R[k].length) h+=`<div class="rec-empty">Sem não conformidades registradas.</div>`;
+    else R[k].forEach(([txt,n])=>{ h+=`<div class="rec-item"><span class="rec-cnt" style="background:${col}">${n}</span><span class="rec-txt">${txt}</span></div>`; });
+    h+=`</div>`; });
+  host.innerHTML=h+`</div>`;
+}
+
+/* ================= DASHBOARD ================= */
+function renderDash(){
+  renderRecorrencias();
+  const list=Object.values(store.audits).sort((x,y)=>y.createdAt-x.createdAt);
+  const c={todas:list.length,aberta:0,andamento:0,concluida:0}; list.forEach(a=>c[statusOf(a)]++);
+  $("#cTodas").textContent=c.todas;$("#cAberta").textContent=c.aberta;$("#cAndamento").textContent=c.andamento;$("#cConcluida").textContent=c.concluida;
+  document.querySelectorAll(".stat").forEach(s=>s.classList.toggle("active",s.dataset.filter===dashFilter));
+  $("#listTitle").textContent=dashFilter==="todas"?"TODAS AS AUDITORIAS":STATUS_LABEL[dashFilter].toUpperCase();
+  const rows=dashFilter==="todas"?list:list.filter(a=>statusOf(a)===dashFilter);
+  const host=$("#tableHost");
+  if(!rows.length){ host.innerHTML=`<div class="empty"><p>Nenhuma auditoria ${dashFilter==="todas"?"criada ainda":"neste status"}.</p>${dashFilter==="todas"?'<button class="act primary" onclick="document.getElementById(\'btnNew\').click()">+ Criar a primeira</button>':''}</div>`; return; }
+  let h=`<table class="audits"><thead><tr><th>Referência</th><th>Modelo</th><th class="hide-sm">Coordenador</th><th>Gestor</th><th>Progresso</th><th>Nota geral</th><th>Status</th><th></th></tr></thead><tbody>`;
+  rows.forEach(a=>{ const st=statusOf(a),n=notaGeral(a),pct=Math.round(answeredCells(a)/totalCells(a)*100),bd=band(n);
+    h+=`<tr class="row" data-open="${a.id}">
+      <td class="contract-cell">${ref(a)}<div class="sub-cell">${(a.modelo==="scala"?a.meta.obra:a.meta.regional)||""}</div></td>
+      <td><span class="mbadge ${a.modelo}">${a.modelo==="scala"?"SCALA":"Obras"}</span></td>
+      <td class="hide-sm sub-cell">${a.meta.coord||"—"}</td>
+      <td>${a.meta.gestor||"—"}${giOn(a)&&a.meta.ginome?`<div class="sub-cell">GI: ${a.meta.ginome}</div>`:""}</td>
+      <td><span class="mini-bar"><span class="mini-fill" style="width:${pct}%"></span></span><span class="num" style="font-size:12px;color:var(--muted)">${pct}%</span></td>
+      <td class="nota-cell" style="color:${st==="aberta"?"var(--muted-2)":bd.color}">${st==="aberta"?"—":fmt(n)}</td>
+      <td><span class="badge ${st}">${STATUS_LABEL[st]}</span></td>
+      <td><button class="del" data-del="${a.id}" title="Excluir">🗑</button></td></tr>`; });
+  h+="</tbody></table>"; host.innerHTML=h;
+  host.querySelectorAll("tr.row").forEach(r=>r.onclick=e=>{ if(e.target.closest(".del"))return; openAudit(r.dataset.open); });
+  host.querySelectorAll(".del").forEach(b=>b.onclick=e=>{ e.stopPropagation(); if(confirm("Excluir esta auditoria?")){ const id=b.dataset.del; delete store.audits[id]; persistDelete(id); renderDash(); } });
+}
+
+/* ================= AUDIT ================= */
+function openAudit(id){
+  currentId=id; const a=store.audits[id]; const M=MOD(a); activeTab=M.grupos[0].id;
+  $("#viewDash").classList.add("hidden"); $("#viewAudit").classList.remove("hidden"); window.scrollTo(0,0);
+  $("#aTitle").textContent=(a.modelo==="scala"?"SCALA — ":"")+(ref(a));
+  $("#aSubtitle").textContent=`${a.meta.coord||"—"} · ${a.meta.data?a.meta.data.split("-").reverse().join("/"):"sem data"}`;
+  // show/hide meta fields
+  document.querySelectorAll("#metaGrid [data-fld]").forEach(el=>el.style.display=M.metaFields.includes(el.dataset.fld)?"":"none");
+  $("#m-auditor").value=a.meta.auditor||""; $("#m-proc").value=a.meta.proc||""; $("#m-junc").value=a.meta.junc||"";
+  $("#m-agencia").value=a.meta.agencia||""; $("#m-data").value=a.meta.data||""; $("#m-gestor").value=a.meta.gestor||""; $("#m-ginome").value=a.meta.ginome||""; $("#m-obra").value=a.meta.obra||"";
+  fillSelect($("#m-contrato"),CONTRATOS,a.meta.contrato); fillSelect($("#m-regional"),REGIONAIS,a.meta.regional);
+  fillSelect($("#m-coord"),store.coordenadores,a.meta.coord); $("#m-gi").value=a.meta.gi||"Sim";
+  document.querySelector('.rq-g').style.display=M.reqNames===false?"none":(a.modelo==="obras"?"":"none");
+  bindMeta(a); renderTabs(a); renderCrit(a); paintAll(); toggleGiField(a);
+}
+function toggleGiField(a){ const M=MOD(a); $('[data-fld="ginome"]').style.display=(M.metaFields.includes("ginome")&&giOn(a))?"":"none"; }
+
+function renderTabs(a){
+  const host=$("#tabs"); host.innerHTML="";
+  grupos(a).forEach(g=>{ const b=document.createElement("button"); b.className="tab"+(g.id===activeTab?" active":""); b.innerHTML=`${g.label}<span class="cnt">${g.crit.length}</span>`; b.onclick=()=>{ activeTab=g.id; renderTabs(a); renderCrit(a); }; host.appendChild(b); });
+}
+function renderCrit(a){
+  const g=grupos(a).find(x=>x.id===activeTab)||grupos(a)[0]; const host=$("#critHost"); host.innerHTML="";
+  let lastCat=null;
+  g.crit.forEach(c=>{
+    if(c.cat!==lastCat){ const ch=document.createElement("div"); ch.className="cathead"; ch.textContent=c.cat; host.appendChild(ch); lastCat=c.cat; }
+    const wrap=document.createElement("div"); wrap.className="crit";
+    let html=`<div class="crit-text"><span class="code">${c.id}</span>${c.t}</div><div class="crit-sub">${g.eixo}${c.sub?" · "+c.sub:(g.tipo!=="—"?" · "+g.tipo:"")}</div>`;
+    papeis(a).forEach(p=>{ const x=getCell(a,c.id,p.k);
+      html+=`<div class="evalrow" data-cid="${c.id}" data-p="${p.k}">
+        <div class="who">${p.lbl}<small>${p.nome||"—"}</small></div>
+        <div class="verdicts">
+          <button class="vbtn" data-v="conforme">Conforme</button><button class="vbtn" data-v="na">N.A.</button><button class="vbtn" data-v="nc">Não conf.</button>
+        </div>
+        <div class="nc-extra">
+          <select class="of-sel"><option value="">Selecione o ofensor…</option>${c.of.map((o,i)=>`<option value="${i}">${o.t} — ${IMPLABEL[o.i]} (−${fmt(DISCOUNT[o.i])})</option>`).join("")}</select>
+          <textarea class="of-obs" placeholder="Observação da não conformidade">${x.obs||""}</textarea>
+        </div>
+      </div>`;
+    });
+    wrap.innerHTML=html; host.appendChild(wrap);
+  });
+  host.querySelectorAll(".evalrow").forEach(row=>{
+    const cid=row.dataset.cid,p=row.dataset.p,x=cell(a,cid,p);
+    row.querySelectorAll(".vbtn").forEach(b=>b.onclick=()=>{ x.v=(x.v===b.dataset.v)?null:b.dataset.v; if(x.v!=="nc"){x.of=null;} if(a.finalized)a.finalized=false; scheduleSave(); paintRow(a,row); paintAll(); });
+    const sel=row.querySelector(".of-sel"); sel.value=(x.of!=null?String(x.of):""); sel.onchange=()=>{ x.of=sel.value===""?null:parseInt(sel.value); scheduleSave(); paintRow(a,row); paintAll(); };
+    const obs=row.querySelector(".of-obs"); obs.oninput=()=>{ x.obs=obs.value; scheduleSave(); };
+    paintRow(a,row);
+  });
+}
+function paintRow(a,row){ const cid=row.dataset.cid,p=row.dataset.p,x=getCell(a,cid,p);
+  row.querySelectorAll(".vbtn").forEach(b=>b.className="vbtn"+(x.v===b.dataset.v?` sel-${x.v}`:""));
+  row.querySelector(".nc-extra").classList.toggle("on",x.v==="nc");
+  const sel=row.querySelector(".of-sel"); sel.classList.toggle("pending",x.v==="nc"&&x.of==null);
+}
+function bindMeta(a){
+  const set=(id,k,extra)=>{ const el=$(id); if(!el)return; el.oninput=el.onchange=()=>{ a.meta[k]=el.value; scheduleSave(); if(extra)extra(); }; };
+  set("#m-auditor","auditor"); set("#m-proc","proc"); set("#m-junc","junc"); set("#m-agencia","agencia");
+  set("#m-data","data"); set("#m-gestor","gestor",()=>{renderCrit(a);paintAll();$("#aTitle").textContent=(a.modelo==="scala"?"SCALA — ":"")+ref(a);}); set("#m-ginome","ginome",()=>renderCrit(a));
+  set("#m-contrato","contrato",()=>{$("#aTitle").textContent=ref(a);}); set("#m-regional","regional"); set("#m-coord","coord");
+  set("#m-obra","obra",()=>{$("#aTitle").textContent=(a.modelo==="scala"?"SCALA — ":"")+ref(a);});
+  $("#m-gi").onchange=()=>{ a.meta.gi=$("#m-gi").value; scheduleSave(); toggleGiField(a); renderCrit(a); paintAll(); };
+  $("#m-coordadd").onclick=()=>addCoord($("#m-coord"),v=>{a.meta.coord=v;scheduleSave();});
+}
+function addCoord(sel,cb){ const nome=(prompt("Nome do novo coordenador:")||"").trim(); if(!nome)return; if(!store.coordenadores.includes(nome)) store.coordenadores.push(nome); persistCoords(); fillSelect(sel,store.coordenadores,nome); if(cb)cb(nome); }
+
+function notesMatrixHTML(a){
+  const M=MOD(a); const cols=M.matrixOrder.map(id=>M.grupos.find(g=>g.id===id)); const rows=papeis(a);
+  const cellHTML=v=>`<td class="v" style="color:${band(v).color}">${fmt(v)}</td>`;
+  let h=`<table class="nm"><thead><tr><th>Avaliado</th>${cols.map(g=>`<th>${g.short.replace(/\n/g,'<br>')}</th>`).join("")}<th>Nota final</th></tr></thead><tbody>`;
+  rows.forEach(r=>{ const per=notasPapel(a,r.k); h+=`<tr><td class="who">${r.lbl}<small>${r.nome||"—"}</small></td>${cols.map(g=>cellHTML(per.grupos[g.id])).join("")}<td class="v final" style="color:${band(per.final).color}">${fmt(per.final)}</td></tr>`; });
+  h+="</tbody></table>"; return h;
+}
+function paintAll(){
+  const a=store.audits[currentId]; if(!a)return;
+  $("#notesMatrix").innerHTML=notesMatrixHTML(a);
+  const g=notaGeral(a),bd=band(g);
+  const ng=$("#notaGeral"); ng.textContent=fmt(g); ng.style.color=bd.color;
+  const rb=$("#resultBadge"); rb.textContent=bd.label; rb.style.color=bd.color; rb.style.background=bd.bg;
+  const done=answeredCells(a),tot=totalCells(a),pct=tot?Math.round(done/tot*100):0;
+  $("#pDone").textContent=done; $("#pTotal").textContent=tot; $("#pPct").textContent=pct+"%"; $("#barFill").style.width=pct+"%";
+  const st=statusOf(a),pill=$("#statusPill"); pill.textContent=STATUS_LABEL[st]; pill.className="badge "+st;
+  const pend=pendingOf(a); $("#statusNote").textContent=pend?`${pend} não conformidade(s) sem ofensor selecionado`:"";
+  $("#btnFinalize").textContent=a.finalized?"Reabrir auditoria":"Concluir auditoria";
+}
+
+/* ================= EXPORT ================= */
+const esc=s=>`"${String(s==null?"":s).replace(/"/g,'""')}"`;
+function grpLabels(M){ return M.matrixOrder.map(id=>M.grupos.find(g=>g.id===id).short.replace(/\n/g," ")); }
+function tabelaNotas(M,list){
+  const loc=M.locField||{key:"regional",label:"Regional"};
+  let L=["TABELA DE NOTAS — "+M.nome, ["Referência",loc.label,"Coordenador","Data","Avaliado","Papel"].concat(grpLabels(M)).concat(["Nota Final","Resultado","Status"]).join(";")];
+  list.forEach(a=>{ const st=STATUS_LABEL[statusOf(a)];
+    papeis(a).forEach(p=>{ const per=notasPapel(a,p.k);
+      L.push([esc(ref(a)),esc(a.meta[loc.key]),esc(a.meta.coord),esc(a.meta.data),esc(p.nome),p.lbl].concat(M.matrixOrder.map(id=>fmt(per.grupos[id]))).concat([fmt(per.final),band(per.final).label,st]).join(";")); });
+    L.push([esc(ref(a)),"","","","—","NOTA GERAL"].concat(M.matrixOrder.map(()=>"")).concat([fmt(notaGeral(a)),band(notaGeral(a)).label,st]).join(";"));
+  });
+  return L;
+}
+function tabelaOfensores(M,list){
+  let L=["TABELA DE OFENSORES — "+M.nome,"Referência;Avaliado;Papel;Categoria;Critério;Verdito;Ofensor;Impacto;Desconto;Observação"]; let any=false;
+  list.forEach(a=>{ M.grupos.forEach(g=>g.crit.forEach(c=>{ papeis(a).forEach(p=>{ const x=getCell(a,c.id,p.k);
+    if(x.v==="nc"){ any=true; const o=(x.of!=null&&c.of[x.of])?c.of[x.of]:null;
+      L.push([esc(ref(a)),esc(p.nome),p.lbl,esc(c.cat),esc(c.t),"Não conforme",esc(o?o.t:"(sem ofensor)"),o?IMPLABEL[o.i]:"",o?fmt(DISCOUNT[o.i]):"",esc(x.obs)].join(";")); }
+  }); })); });
+  if(!any) L.push("(nenhuma não conformidade registrada)");
+  return L;
+}
+function csvOne(a){ const M=MOD(a); return [`AUDITORIA — ${M.nome} — ${ref(a)}`,""].concat(tabelaNotas(M,[a])).concat(["",""]).concat(tabelaOfensores(M,[a])).join("\n"); }
+function csvAll(){ const list=Object.values(store.audits).sort((x,y)=>y.createdAt-x.createdAt); let out=["PAINEL — AUDITORIAS DE QUALIDADE (MÉTODO)"];
+  ["obras","scala"].forEach(mid=>{ const sub=list.filter(a=>(a.modelo||"obras")===mid); if(!sub.length)return; const M=MODELS[mid];
+    out.push(""); out.push("############################################################"); out.push("# MODELO: "+M.nome); out.push("############################################################");
+    out=out.concat(tabelaNotas(M,sub)).concat([""]).concat(tabelaOfensores(M,sub)); });
+  return out.join("\n"); }
+function openExport(title,text,fname){ $("#expTitle").textContent=title; $("#expArea").value=text; $("#expDlg").dataset.fname=fname; $("#expDlg").showModal(); }
+
+/* ================= NEW / INIT ================= */
+function syncNewFields(){ const m=$("#n-modelo").value; const M=MODELS[m];
+  document.querySelectorAll("#newDlg [data-nfld]").forEach(el=>{ const f=el.dataset.nfld; let show=M.metaFields.includes(f); if(f==="ginome") show=M.dual&&$("#n-gi").value==="Sim"; el.style.display=show?"":"none"; });
+  document.querySelectorAll("#newDlg .rq-g").forEach(e=>e.style.display=M.reqNames===false?"none":(m==="obras"?"":"none"));
+}
+function validNew(){ const m=$("#n-modelo").value; const req=[]; if(m==="obras"){ req.push("#n-gestor"); if($("#n-gi").value==="Sim") req.push("#n-ginome"); }
+  let ok=true; document.querySelectorAll("#newDlg input").forEach(el=>el.classList.remove("err"));
+  req.forEach(id=>{ const el=$(id); const bad=!el.value.trim(); el.classList.toggle("err",bad); if(bad)ok=false; }); return ok; }
+
+async function init(){
+  await loadStore(); renderDash();
+  document.querySelectorAll(".stat").forEach(s=>s.onclick=()=>{ dashFilter=s.dataset.filter; renderDash(); });
+  $("#btnBack").onclick=()=>{ const a=store.audits[currentId];
+    if(a&&MOD(a).reqNames!==false&&a.modelo==="obras"&&(!(a.meta.gestor||"").trim()||(giOn(a)&&!(a.meta.ginome||"").trim()))){ if(!confirm("Os nomes de Gestor/Gestor GI são obrigatórios e estão em branco. Sair mesmo assim?"))return; }
+    $("#viewAudit").classList.add("hidden"); $("#viewDash").classList.remove("hidden"); renderDash();
+  };
+  $("#btnNew").onclick=()=>{
+    $("#n-modelo").value="obras";
+    fillSelect($("#n-contrato"),CONTRATOS,CONTRATOS[0]); fillSelect($("#n-regional"),REGIONAIS,REGIONAIS[0]); fillSelect($("#n-coord"),store.coordenadores,store.coordenadores[0]);
+    $("#n-gestor").value=""; $("#n-ginome").value=""; $("#n-gi").value="Sim"; $("#n-data").value=new Date().toISOString().slice(0,10);
+    document.querySelectorAll("#newDlg input").forEach(e=>e.classList.remove("err")); syncNewFields(); $("#newDlg").showModal();
+  };
+  $("#n-modelo").onchange=syncNewFields; $("#n-gi").onchange=syncNewFields;
+  $("#n-coordadd").onclick=()=>addCoord($("#n-coord"));
+  $("#newClose").onclick=$("#newCancel").onclick=()=>$("#newDlg").close();
+  $("#newCreate").onclick=()=>{ if(!validNew())return; const m=$("#n-modelo").value; const id=uid();
+    store.audits[id]={id,modelo:m,createdAt:Date.now(),finalized:false,answers:{},meta:{
+      contrato:m==="obras"?$("#n-contrato").value:"",regional:m==="obras"?$("#n-regional").value:"",obra:m==="scala"?$("#n-obra").value.trim():"",coord:$("#n-coord").value,
+      gestor:$("#n-gestor").value.trim(),gi:m==="obras"?$("#n-gi").value:"Não",ginome:$("#n-ginome").value.trim(),
+      data:$("#n-data").value,auditor:"",proc:"",junc:"",agencia:""}};
+    scheduleSave(); $("#newDlg").close(); persistAudit(id); openAudit(id);
+  };
+  $("#btnFinalize").onclick=()=>{ const a=store.audits[currentId];
+    if(!a.finalized){
+      if(a.modelo==="obras"&&(!(a.meta.gestor||"").trim()||(giOn(a)&&!(a.meta.ginome||"").trim()))){ alert("Preencha os nomes obrigatórios (Gestor e Gestor GI) antes de concluir."); return; }
+      if(pendingOf(a)>0){ if(!confirm(`Há ${pendingOf(a)} não conformidade(s) sem ofensor selecionado. Concluir mesmo assim?`))return; }
+      if(answeredCells(a)<totalCells(a)){ if(!confirm("Ainda há avaliações em branco. Concluir mesmo assim?"))return; }
+    }
+    a.finalized=!a.finalized; scheduleSave(); paintAll();
+  };
+  $("#btnExportOne").onclick=()=>{ const a=store.audits[currentId]; openExport("Exportar tabela da auditoria",csvOne(a),"auditoria-"+(ref(a)||"metodo").replace(/\W+/g,"-")+".csv"); };
+  $("#btnRefresh").onclick=async()=>{ $("#btnRefresh").textContent="Atualizando…"; await loadStore(); renderDash(); $("#btnRefresh").textContent="↻ Atualizar"; };
+  $("#btnExportAll").onclick=()=>openExport("Exportar tabela geral",csvAll(),"painel-auditorias-metodo.csv");
+  $("#expClose").onclick=()=>$("#expDlg").close();
+  $("#expCopy").onclick=async()=>{ const t=$("#expArea"); t.select(); try{ await navigator.clipboard.writeText(t.value); }catch(e){ document.execCommand("copy"); } $("#expCopy").textContent="Copiado!"; setTimeout(()=>$("#expCopy").textContent="Copiar",1500); };
+  $("#expDownload").onclick=()=>{ try{ const blob=new Blob(["\ufeff"+$("#expArea").value],{type:"text/csv;charset=utf-8"}); const u=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=u; a.download=$("#expDlg").dataset.fname||"export.csv"; a.click(); URL.revokeObjectURL(u); }catch(e){ alert("Use o botão Copiar se o download não abrir."); } };
+}
+init();
+</script>
+</body>
+</html>
