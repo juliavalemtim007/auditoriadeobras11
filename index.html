@@ -136,7 +136,7 @@
 <!-- ==================== DASHBOARD ==================== -->
 <div id="viewDash">
   <header><div class="head-row">
-    <div class="brand"><h1><span class="dot"></span>Auditorias de Qualidade — Método</h1><p>Gerenciamento de Obras (Varejo) &amp; SCALA · painel</p></div>
+    <div class="brand"><h1><span class="dot"></span>Auditorias de Qualidade — FAST</h1><p>Gerenciamento de Obras (Varejo) &amp; SCALA · painel</p></div>
     <button class="act primary" id="btnNew">+ Nova auditoria</button>
   </div></header>
   <div class="wrap">
@@ -550,7 +550,7 @@ function tabelaOfensores(M,list){
   return L;
 }
 function csvOne(a){ const M=MOD(a); return [`AUDITORIA — ${M.nome} — ${ref(a)}`,""].concat(tabelaNotas(M,[a])).concat(["",""]).concat(tabelaOfensores(M,[a])).join("\n"); }
-function csvAll(){ const list=Object.values(store.audits).sort((x,y)=>y.createdAt-x.createdAt); let out=["PAINEL — AUDITORIAS DE QUALIDADE (MÉTODO)"];
+function csvAll(){ const list=Object.values(store.audits).sort((x,y)=>y.createdAt-x.createdAt); let out=["PAINEL — AUDITORIAS DE QUALIDADE (FAST)"];
   ["obras","scala"].forEach(mid=>{ const sub=list.filter(a=>(a.modelo||"obras")===mid); if(!sub.length)return; const M=MODELS[mid];
     out.push(""); out.push("############################################################"); out.push("# MODELO: "+M.nome); out.push("############################################################");
     out=out.concat(tabelaNotas(M,sub)).concat([""]).concat(tabelaOfensores(M,sub)); });
