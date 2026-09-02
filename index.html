@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Firebase Realtime Database (necessário para o modo nuvem) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <style>
   /* ===== >>> AJUSTE O LAYOUT AQUI <<< — cores, fontes, cantos ===== */
   :root{
@@ -213,18 +216,22 @@
 
 <script>
 /* ================================================================
-   >>> MODO NUVEM (compartilhado por link) <<<
-   Preencha as duas chaves abaixo com os dados do seu projeto Supabase
-   (gratuito). Com elas preenchidas, TODAS as auditorias ficam salvas
-   num único banco na nuvem: qualquer pessoa que abrir o link preenche
-   e enxerga o mesmo histórico. Deixe em branco para usar salvamento
-   local (só no navegador de quem abre).
-   Passo a passo de como obter estas chaves e publicar a página:
-   veja a mensagem do Claude que acompanha este arquivo.
+   >>> MODO NUVEM (compartilhado por link) — FIREBASE <<<
+   Cole abaixo a databaseURL do seu Realtime Database do Firebase.
+   Com ela preenchida, TODAS as auditorias ficam salvas num único
+   banco na nuvem: qualquer pessoa que abrir o link preenche e vê
+   o mesmo histórico, em tempo real. Deixe em branco para usar
+   salvamento local (só no navegador de quem abre).
+   Como obter a URL e publicar a página: veja a mensagem do Claude.
    ================================================================ */
-const SUPABASE_URL = "";   // ex.: https://xxxxxxxx.supabase.co
-const SUPABASE_KEY = "";   // chave "anon public" do projeto
-const CLOUD = !!(SUPABASE_URL && SUPABASE_KEY);
+const firebaseConfig = {
+  databaseURL: ""   // ex.: https://seu-projeto-default-rtdb.firebaseio.com
+  // Se o Firebase te der o objeto completo (apiKey, authDomain, projectId...),
+  // pode colar todos os campos aqui — só a databaseURL já é suficiente.
+};
+const CLOUD = !!(firebaseConfig.databaseURL && window.firebase);
+let fdb=null;
+if(CLOUD){ try{ firebase.initializeApp(firebaseConfig); fdb=firebase.database(); }catch(e){ console.error(e); } }
 
 /* ================================================================
    LISTAS SUSPENSAS — edite com seus valores reais
@@ -337,29 +344,37 @@ const band=n=>BANDS.find(b=>n>=b.min);
 const MOD=a=>MODELS[a.modelo||"obras"];
 
 let saveTimer=null;
-/* ---- Supabase (tabela kv: k text pk, v jsonb) ---- */
-const SB_H={ "apikey":SUPABASE_KEY, "Authorization":"Bearer "+SUPABASE_KEY, "Content-Type":"application/json" };
-async function kvGetAll(){ const r=await fetch(`${SUPABASE_URL}/rest/v1/kv?select=k,v`,{headers:SB_H}); if(!r.ok) throw new Error("GET "+r.status); return r.json(); }
-async function kvSet(k,v){ const r=await fetch(`${SUPABASE_URL}/rest/v1/kv`,{method:"POST",headers:{...SB_H,"Prefer":"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({k,v})}); if(!r.ok) throw new Error("SET "+r.status); }
-async function kvDel(k){ await fetch(`${SUPABASE_URL}/rest/v1/kv?k=eq.${encodeURIComponent(k)}`,{method:"DELETE",headers:SB_H}); }
+/* ---- Firebase Realtime Database (cada auditoria é um JSON em auditorias_app/audits/<id>) ---- */
+const FB_ROOT="auditorias_app";
+async function fbLoadAll(){ const snap=await fdb.ref(FB_ROOT).once("value"); const val=snap.val()||{}; const out={audits:{},coordenadores:null};
+  if(val.audits) Object.values(val.audits).forEach(s=>{ try{ const a=JSON.parse(s); out.audits[a.id]=a; }catch(e){} });
+  if(val.coordenadores){ try{ out.coordenadores=JSON.parse(val.coordenadores); }catch(e){} }
+  return out; }
+async function fbSetAudit(a){ await fdb.ref(FB_ROOT+"/audits/"+a.id).set(JSON.stringify(a)); }
+async function fbDelAudit(id){ await fdb.ref(FB_ROOT+"/audits/"+id).remove(); }
+async function fbSetCoords(c){ await fdb.ref(FB_ROOT+"/coordenadores").set(JSON.stringify(c)); }
+function fbSubscribe(){ fdb.ref(FB_ROOT+"/audits").on("value",snap=>{
+  const val=snap.val()||{}; const ids=new Set();
+  Object.values(val).forEach(s=>{ try{ const a=JSON.parse(s); ids.add(a.id); if(a.id!==currentId) store.audits[a.id]=a; }catch(e){} });
+  Object.keys(store.audits).forEach(id=>{ if(id!==currentId && !ids.has(id)) delete store.audits[id]; });
+  if(!$("#viewDash").classList.contains("hidden")) renderDash();
+}); }
 
 async function localSaveAll(){ if(hasStore) await window.storage.set(STORE_KEY,JSON.stringify(store)); else localStorage.setItem(STORE_KEY,JSON.stringify(store)); }
 
 async function loadStore(){
   try{
-    if(CLOUD){
-      const rows=await kvGetAll(); store={audits:{},coordenadores:null};
-      rows.forEach(r=>{ if(r.k==="coordenadores") store.coordenadores=r.v; else if(r.k&&r.k.indexOf("audit:")===0&&r.v) store.audits[r.v.id||r.k.slice(6)]=r.v; });
-    } else if(hasStore){ const r=await window.storage.get(STORE_KEY); if(r&&r.value) store=JSON.parse(r.value); }
+    if(CLOUD){ store=await fbLoadAll(); }
+    else if(hasStore){ const r=await window.storage.get(STORE_KEY); if(r&&r.value) store=JSON.parse(r.value); }
     else { const raw=localStorage.getItem(STORE_KEY); if(raw) store=JSON.parse(raw); }
-  }catch(e){ if(CLOUD) alert("Não consegui conectar ao banco na nuvem. Confira SUPABASE_URL / SUPABASE_KEY e as permissões (RLS) da tabela."); }
+  }catch(e){ if(CLOUD) alert("Não consegui conectar ao Firebase. Confira a databaseURL e as regras do Realtime Database."); }
   if(!store.coordenadores) store.coordenadores=COORD_PADRAO.slice();
   Object.values(store.audits).forEach(a=>{ if(!a.modelo) a.modelo="obras"; }); /* migração */ }
 
 function scheduleSave(){ flashSaving(); clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ if(currentId) persistAudit(currentId); else persistCoords(); },450); }
-async function persistAudit(id){ const a=store.audits[id]; if(!a)return; try{ if(CLOUD) await kvSet("audit:"+id,a); else await localSaveAll(); flashSaved(CLOUD?"Salvo na nuvem · compartilhado":"Progresso salvo automaticamente"); }catch(e){ flashSaved("Não foi possível salvar",true); } }
-async function persistCoords(){ try{ if(CLOUD) await kvSet("coordenadores",store.coordenadores); else await localSaveAll(); }catch(e){} }
-async function persistDelete(id){ try{ if(CLOUD) await kvDel("audit:"+id); else await localSaveAll(); }catch(e){} }
+async function persistAudit(id){ const a=store.audits[id]; if(!a)return; try{ if(CLOUD) await fbSetAudit(a); else await localSaveAll(); flashSaved(CLOUD?"Salvo na nuvem · compartilhado":"Progresso salvo automaticamente"); }catch(e){ flashSaved("Não foi possível salvar",true); } }
+async function persistCoords(){ try{ if(CLOUD) await fbSetCoords(store.coordenadores); else await localSaveAll(); }catch(e){} }
+async function persistDelete(id){ try{ if(CLOUD) await fbDelAudit(id); else await localSaveAll(); }catch(e){} }
 function flashSaving(){ const i=$("#savedInd"); if(!i)return; i.classList.remove("on"); $("#savedTxt").textContent="Salvando…"; }
 function flashSaved(t,err){ const i=$("#savedInd"); if(!i)return; i.classList.toggle("on",!err); $("#savedTxt").textContent=t; }
 
@@ -552,7 +567,7 @@ function validNew(){ const m=$("#n-modelo").value; const req=[]; if(m==="obras")
   req.forEach(id=>{ const el=$(id); const bad=!el.value.trim(); el.classList.toggle("err",bad); if(bad)ok=false; }); return ok; }
 
 async function init(){
-  await loadStore(); renderDash();
+  await loadStore(); renderDash(); if(CLOUD) fbSubscribe();
   document.querySelectorAll(".stat").forEach(s=>s.onclick=()=>{ dashFilter=s.dataset.filter; renderDash(); });
   $("#btnBack").onclick=()=>{ const a=store.audits[currentId];
     if(a&&MOD(a).reqNames!==false&&a.modelo==="obras"&&(!(a.meta.gestor||"").trim()||(giOn(a)&&!(a.meta.ginome||"").trim()))){ if(!confirm("Os nomes de Gestor/Gestor GI são obrigatórios e estão em branco. Sair mesmo assim?"))return; }
@@ -593,3 +608,4 @@ init();
 </script>
 </body>
 </html>
+
