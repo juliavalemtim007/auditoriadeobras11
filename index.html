@@ -46,7 +46,8 @@
   .stat .n{font-family:var(--font-title);font-size:28px;font-weight:700;line-height:1;} .stat .l{font-size:12px;color:var(--muted);margin-top:6px;} .stat .accent{width:26px;height:3px;border-radius:2px;margin-top:10px;}
 
   .rec-title{font-size:13px;font-weight:600;letter-spacing:.05em;color:var(--muted);margin:2px 0 10px;font-family:var(--font-title);}
-  .rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px;}
+  .rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:26px;}
+  .rec-etapa{font-family:var(--font-title);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-2);margin:12px 0 2px;}
   .rec-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px 16px;}
   .rec-h{font-family:var(--font-title);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;}
   .rec-item{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line);} .rec-item:first-of-type{border-top:none;}
@@ -251,7 +252,7 @@ const MODELS = {
   metaFields:["auditor","proc","contrato","regional","coord","junc","agencia","data","gestor","gi","ginome"],
   matrixOrder:["qual_desemp","qual_proc","seg_desemp","seg_proc"],
   grupos:[
-   {id:"qual_desemp",label:"Qualidade · Desempenho",short:"Qualidade\nDesempenho",eixo:"Qualidade",tipo:"Desempenho",bucket:"produto",crit:[
+   {id:"qual_desemp",label:"Qualidade · Desempenho",short:"Qualidade\nDesempenho",eixo:"Qualidade",tipo:"Desempenho",bucket:"produto",pEixo:"Qualidade",pEtapa:"Desempenho",crit:[
      {id:"QP1",cat:"PROJETO",t:`Projeto utilizado em obra está na revisão vigente e disponível para consulta`,of:[gr(`Projeto em obra não é a última revisão vigente`),mo(`Projeto vigente não está impresso/disponível para consulta em obra`)]},
      {id:"QP2",cat:"PROJETO",t:`Medidas do local conferem com o projeto`,of:[gr(`Medidas divergentes do projeto, sem justificativa`),mo(`Medidas conferidas, porém sem evidência de registro`)]},
      {id:"QP3",cat:"LICENÇAS, APROVAÇÕES E SEGUROS",t:`Licenças, ARTs e seguro de obra estão vigentes e disponíveis`,of:[gr(`Pendência de documentação inicial de obra sem justificativa`)]},
@@ -271,7 +272,7 @@ const MODELS = {
      {id:"QP17",cat:"ACESSIBILIDADE",t:`Ambiente atende às normas de acessibilidade (NBR 9050)`,of:[gr(`Rota acessível, rampa ou sanitário PCD fora da norma, sem justificativa`),gr(`Sinalização tátil/visual de acessibilidade ausente, sem justificativa`)]},
      {id:"QP18",cat:"SEGURANÇA PREDIAL E TI",t:`Sistemas de segurança predial e TI estão instalados, identificados e testados`,of:[gr(`CFTV, alarme ou controle de acesso sem teste de funcionamento, sem justificativa`),le(`Cabeamento de TI/lógica sem identificação, sem justificativa`)]}
    ]},
-   {id:"qual_proc",label:"Qualidade · Processo",short:"Qualidade\nProcesso",eixo:"Qualidade",tipo:"Processo",bucket:"processo",crit:[
+   {id:"qual_proc",label:"Qualidade · Processo",short:"Qualidade\nProcesso",eixo:"Qualidade",tipo:"Processo",bucket:"processo",pEixo:"Qualidade",pEtapa:"Processo",crit:[
      {id:"QR1",cat:"ESTRUTURA, STATUS E PRAZOS NO SISTEMA FAST",t:`Estrutura e status da tarefa no sistema refletem a real situação do processo`,of:[gr(`Status incorreto (ex.: cancelado para atividade em andamento/finalizada) ou fora da ordem cronológica`),mo(`Erro no cadastro da estrutura ou nomes incoerentes na tarefa (Gestor/Coordenador)`)]},
      {id:"QR2",cat:"ESTRUTURA, STATUS E PRAZOS NO SISTEMA FAST",t:`Entregas respeitam o prazo definido ou possuem justificativa válida`,of:[gr(`Atraso na entrega maior que 15 dias, sem justificativa válida`),mo(`Atraso na entrega de até 15 dias, sem justificativa válida`),le(`Atraso na entrega de até 7 dias, sem justificativa válida`)]},
      {id:"QR3",cat:"ESTRUTURA, STATUS E PRAZOS NO SISTEMA FAST",t:`Diário do processo está atualizado e indicador SGQ (campo ISO) preenchido corretamente`,of:[gr(`Falha ou atraso na atualização do diário do processo`),gr(`Campo ISO não preenchido ou divergente da real situação da entrega`)]},
@@ -284,7 +285,7 @@ const MODELS = {
      {id:"QR10",cat:"RASTREABILIDADE DO DIÁRIO DO PROCESSO",t:`Diário do processo registra os eventos relevantes com evidência que os sustente`,of:[gr(`Ausência de registro de evento relevante (acionamento, paralisação, reprogramação, custo extra, inconformidade)`),gr(`Falta de sinergia entre documentos do processo (dados divergentes)`)]},
      {id:"QR11",cat:"DOCUMENTOS OBRIGATÓRIOS POR ETAPA",t:`Documentos obrigatórios de cada etapa estão completos no processo`,of:[gr(`Documento obrigatório da etapa não localizado no processo`)]}
    ]},
-   {id:"seg_desemp",label:"Segurança · Desempenho",short:"Segurança\nDesempenho",eixo:"Segurança",tipo:"Desempenho",bucket:"seguranca",crit:[
+   {id:"seg_desemp",label:"Segurança · Desempenho",short:"Segurança\nDesempenho",eixo:"Segurança",tipo:"Desempenho",bucket:"seguranca",pEixo:"Segurança",pEtapa:"Desempenho",crit:[
      {id:"SG1",cat:"SMS — Documentação inicial",t:`Documentação obrigatória de SMS (PGR, PCMSO, PGRCC, Comunicado Prévio de Obras) disponível e de fácil acesso no canteiro`,of:[gr(`Ausência de documentos obrigatórios`)]},
      {id:"SG2",cat:"SMS — Techsocial (apenas contrato TIVIO)",t:`Documentação dos colaboradores liberada pela equipe de SMS/PMO conforme requisitos`,of:[gr(`Colaborador sem liberação da equipe de SMS/PMO; documentação pendente, incompleta, vencida ou em desacordo`)]},
      {id:"SG3",cat:"SMS — Documentação de atividades de risco",t:`APR, PT, certificados de Trabalho em Altura e ASO disponíveis e de fácil acesso no canteiro`,of:[gr(`Ausência de documentos obrigatórios`)]},
@@ -293,7 +294,7 @@ const MODELS = {
      {id:"SG6",cat:"SMS — Limpeza, organização e resíduos",t:`Frentes de serviço limpas e organizadas; resíduos segregados, acondicionados e destinados conforme procedimentos`,of:[mo(`Frentes de serviço desorganizadas ou gestão inadequada de resíduos`)]},
      {id:"SG7",cat:"SMS — Resíduos (documentação)",t:`Documentação final dos resíduos arquivada e em conformidade, incluindo CTRs`,of:[mo(`Ausência, inconsistência ou arquivamento inadequado da documentação final dos resíduos e dos CTRs`)]}
    ]},
-   {id:"seg_proc",label:"Segurança · Processo",short:"Segurança\nProcesso",eixo:"Segurança",tipo:"Processo",bucket:"seguranca",crit:[
+   {id:"seg_proc",label:"Segurança · Processo",short:"Segurança\nProcesso",eixo:"Segurança",tipo:"Processo",bucket:"seguranca",pEixo:"Segurança",pEtapa:"Processo",crit:[
      {id:"SG8",cat:"SMS — Guia de SMS / Mudanças climáticas",t:`Documento entregue e registrado na ata da reunião de início (PG.PROG.2000 – FAST)`,of:[mo(`Documento obrigatório da etapa não localizado no processo`)]},
      {id:"SG9",cat:"SMS — VAR",t:`Aplicativo de segurança (VAR) preenchido corretamente`,of:[gr(`Não evidenciado o preenchimento do aplicativo`)]},
      {id:"SG10",cat:"SMS — Recursos Humanos",t:`Colaborador/gestor possui todos os cursos obrigatórios de SMS válidos e vigentes`,of:[gr(`Curso obrigatório vencido, pendente ou não realizado; ausência de certificado`)]}
@@ -305,14 +306,14 @@ const MODELS = {
   metaFields:["auditor","obra","coord","data","gestor"],
   matrixOrder:["processo","desempenho"],
   grupos:[
-   {id:"processo",label:"Processo",short:"Processo",eixo:"Processo",tipo:"—",bucket:"processo",crit:[
+   {id:"processo",label:"Processo",short:"Processo",eixo:"Processo",tipo:"—",bucket:"processo",pEixo:"Qualidade",pEtapa:"Processo",crit:[
      {id:"SP1",cat:"PROCESSO",t:`Gestor abriu checklist para toda não conformidade identificada, com classificação correta`,of:[gr(`Não conformidade identificada em campo sem abertura de checklist correspondente`),gr(`Item classificado como FOD quando deveria ser CIL (ou vice-versa), mascarando a criticidade real`)]},
      {id:"SP2",cat:"PROCESSO",t:`Gestor validou a documentação de fechamento do PA entregue pelo vendor antes de encerrar o item`,of:[gr(`PA encerrado sem validação técnica da documentação entregue pelo vendor`),gr(`Documentação de fechamento aceita mesmo divergente do achado original (evidência não corresponde ao problema)`)]},
      {id:"SP3",cat:"PROCESSO",t:`Gestor controla o prazo do PA e sinaliza atrasos ao vendor e ao cliente`,of:[mo(`PA com prazo vencido sem comunicação formal ao vendor/cliente`),le(`Ausência de reenvio de cobrança para PAs em atraso recorrente`)]},
      {id:"SP4",cat:"PROCESSO",t:`Documentação de fechamento entregue pelo vendor resolve tecnicamente o plano de ação original`,of:[gr(`Evidência entregue não corresponde ao achado original`),mo(`Documentação de fechamento incompleta (faltam fotos, laudo ou relatório de teste)`)]},
      {id:"SP5",cat:"PROCESSO",t:`Itens de responsabilidade do cliente (decisão contratual/escopo) possuem retorno formal registrado`,of:[mo(`Pendência de responsabilidade do cliente sem retorno formal registrado`),le(`Decisão do cliente registrada informalmente (verbal), sem evidência documental`)]}
    ]},
-   {id:"desempenho",label:"Desempenho",short:"Desempenho",eixo:"Desempenho",tipo:"—",bucket:"produto",crit:[
+   {id:"desempenho",label:"Desempenho",short:"Desempenho",eixo:"Desempenho",tipo:"—",bucket:"produto",pEixo:"Qualidade",pEtapa:"Desempenho",crit:[
      {id:"SD1",cat:"DESEMPENHO",t:`Relatório mensal consolida todos os checklists tratados no período, com status`,of:[gr(`Relatório mensal sem a relação completa dos checklists do período (itens omitidos)`),mo(`Ausência de indicador dos itens pendentes`)]},
      {id:"SD2",cat:"DESEMPENHO",t:`Relatório apresenta indicadores de desempenho do período (% de PA no prazo, itens críticos em aberto)`,of:[mo(`Relatório sem indicador de % de cumprimento de prazo dos PAs`),gr(`Ausência de destaque para itens críticos ainda em aberto`)]},
      {id:"SD3",cat:"DESEMPENHO",t:`Relatório está claro, sem erros e serve como registro histórico auditável`,of:[gr(`Dados do relatório divergentes da planilha de controle de checklists`),le(`Relatório com erros de digitação, cálculo ou formatação que dificultem a leitura`)]},
@@ -397,22 +398,28 @@ function pendingOf(a){ let n=0; allCrit(a).forEach(c=>papeis(a).forEach(p=>{ con
 function statusOf(a){ if(a.finalized) return "concluida"; return answeredCells(a)===0?"aberta":"andamento"; }
 function ref(a){ if((a.modelo||"obras")==="scala") return a.meta.obra||a.meta.gestor||"SCALA"; return a.meta.contrato||a.meta.gestor||MOD(a).nome; }
 
-/* ==== Recorrências: critérios com mais não conformidades por bucket ==== */
+/* ==== Recorrências: por eixo (Qualidade/Segurança) e etapa (Desempenho/Processo) ==== */
 function recorrencias(){
-  const b={produto:{},processo:{},seguranca:{}};
-  Object.values(store.audits).forEach(a=>{ MOD(a).grupos.forEach(g=>{ const bk=g.bucket||"produto"; g.crit.forEach(c=>{ papeis(a).forEach(p=>{ const x=getCell(a,c.id,p.k); if(x.v==="nc") b[bk][c.t]=(b[bk][c.t]||0)+1; }); }); }); });
+  const acc={Qualidade:{Desempenho:{},Processo:{}},"Segurança":{Desempenho:{},Processo:{}}};
+  Object.values(store.audits).forEach(a=>{ MOD(a).grupos.forEach(g=>{ const e=g.pEixo||"Qualidade", et=g.pEtapa||"Desempenho"; if(!acc[e]||!acc[e][et])return;
+    g.crit.forEach(c=>{ papeis(a).forEach(p=>{ const x=getCell(a,c.id,p.k); if(x.v==="nc") acc[e][et][c.t]=(acc[e][et][c.t]||0)+1; }); }); }); });
   const top=o=>Object.entries(o).sort((x,y)=>y[1]-x[1]).slice(0,5);
-  return {produto:top(b.produto),processo:top(b.processo),seguranca:top(b.seguranca)};
+  return {Qualidade:{Desempenho:top(acc.Qualidade.Desempenho),Processo:top(acc.Qualidade.Processo)},
+          "Segurança":{Desempenho:top(acc["Segurança"].Desempenho),Processo:top(acc["Segurança"].Processo)}};
 }
 function renderRecorrencias(){
   const host=$("#recHost"); if(!host)return; const R=recorrencias();
-  const defs=[["produto","Desempenho","#5B5BD6"],["processo","Processo","#0E9DB6"],["seguranca","Segurança","#C2781C"]];
-  if(!(R.produto.length||R.processo.length||R.seguranca.length)){ host.innerHTML=""; return; }
+  const eixos=[["Qualidade","#0E9DB6"],["Segurança","#C2781C"]];
+  const any=eixos.some(([e])=>R[e].Desempenho.length||R[e].Processo.length);
+  if(!any){ host.innerHTML=""; return; }
+  const sub=(list,col)=> list.length
+    ? list.map(([t,n])=>`<div class="rec-item"><span class="rec-cnt" style="background:${col}">${n}</span><span class="rec-txt">${t}</span></div>`).join("")
+    : `<div class="rec-empty">Sem não conformidades registradas.</div>`;
   let h=`<div class="rec-title">NÃO CONFORMIDADES MAIS RECORRENTES</div><div class="rec-grid">`;
-  defs.forEach(([k,lbl,col])=>{ h+=`<div class="rec-card"><div class="rec-h" style="color:${col}">${lbl}</div>`;
-    if(!R[k].length) h+=`<div class="rec-empty">Sem não conformidades registradas.</div>`;
-    else R[k].forEach(([txt,n])=>{ h+=`<div class="rec-item"><span class="rec-cnt" style="background:${col}">${n}</span><span class="rec-txt">${txt}</span></div>`; });
-    h+=`</div>`; });
+  eixos.forEach(([e,col])=>{ h+=`<div class="rec-card"><div class="rec-h" style="color:${col}">${e}</div>`
+    +`<div class="rec-etapa">Desempenho</div>${sub(R[e].Desempenho,col)}`
+    +`<div class="rec-etapa">Processo</div>${sub(R[e].Processo,col)}`
+    +`</div>`; });
   host.innerHTML=h+`</div>`;
 }
 
