@@ -225,7 +225,7 @@
    Como obter a URL e publicar a página: veja a mensagem do Claude.
    ================================================================ */
 const firebaseConfig = {
-  databaseURL: "https://auditoria-de-obras-default-rtdb.firebaseio.com"   // ex.: https://seu-projeto-default-rtdb.firebaseio.com
+  databaseURL: "https://auditoria-de-obras-default-rtdb.firebaseio.com"
   // Se o Firebase te der o objeto completo (apiKey, authDomain, projectId...),
   // pode colar todos os campos aqui — só a databaseURL já é suficiente.
 };
@@ -249,9 +249,9 @@ const MODELS = {
  obras:{
   id:"obras", nome:"Gerenciamento de Obras (Varejo)", dual:true, locField:{key:"regional",label:"Regional"},
   metaFields:["auditor","proc","contrato","regional","coord","junc","agencia","data","gestor","gi","ginome"],
-  matrixOrder:["seg","qual_proc","qual_prod"],
+  matrixOrder:["qual_desemp","qual_proc","seg_desemp","seg_proc"],
   grupos:[
-   {id:"qual_prod",label:"Qualidade · Produto",short:"Qualidade\nProduto",eixo:"Qualidade",tipo:"Produto",bucket:"produto",crit:[
+   {id:"qual_desemp",label:"Qualidade · Desempenho",short:"Qualidade\nDesempenho",eixo:"Qualidade",tipo:"Desempenho",bucket:"produto",crit:[
      {id:"QP1",cat:"PROJETO",t:`Projeto utilizado em obra está na revisão vigente e disponível para consulta`,of:[gr(`Projeto em obra não é a última revisão vigente`),mo(`Projeto vigente não está impresso/disponível para consulta em obra`)]},
      {id:"QP2",cat:"PROJETO",t:`Medidas do local conferem com o projeto`,of:[gr(`Medidas divergentes do projeto, sem justificativa`),mo(`Medidas conferidas, porém sem evidência de registro`)]},
      {id:"QP3",cat:"LICENÇAS, APROVAÇÕES E SEGUROS",t:`Licenças, ARTs e seguro de obra estão vigentes e disponíveis`,of:[gr(`Pendência de documentação inicial de obra sem justificativa`)]},
@@ -284,17 +284,19 @@ const MODELS = {
      {id:"QR10",cat:"RASTREABILIDADE DO DIÁRIO DO PROCESSO",t:`Diário do processo registra os eventos relevantes com evidência que os sustente`,of:[gr(`Ausência de registro de evento relevante (acionamento, paralisação, reprogramação, custo extra, inconformidade)`),gr(`Falta de sinergia entre documentos do processo (dados divergentes)`)]},
      {id:"QR11",cat:"DOCUMENTOS OBRIGATÓRIOS POR ETAPA",t:`Documentos obrigatórios de cada etapa estão completos no processo`,of:[gr(`Documento obrigatório da etapa não localizado no processo`)]}
    ]},
-   {id:"seg",label:"Segurança",short:"Segurança",eixo:"Segurança",tipo:"—",bucket:"seguranca",crit:[
-     {id:"SG1",cat:"SMS — Documentação inicial",sub:"Produto",t:`Documentação obrigatória de SMS (PGR, PCMSO, PGRCC, Comunicado Prévio de Obras) disponível e de fácil acesso no canteiro`,of:[gr(`Ausência de documentos obrigatórios`)]},
-     {id:"SG2",cat:"SMS — Techsocial (apenas contrato TIVIO)",sub:"Produto",t:`Documentação dos colaboradores liberada pela equipe de SMS/PMO conforme requisitos`,of:[gr(`Colaborador sem liberação da equipe de SMS/PMO; documentação pendente, incompleta, vencida ou em desacordo`)]},
-     {id:"SG3",cat:"SMS — Documentação de atividades de risco",sub:"Produto",t:`APR, PT, certificados de Trabalho em Altura e ASO disponíveis e de fácil acesso no canteiro`,of:[gr(`Ausência de documentos obrigatórios`)]},
-     {id:"SG4",cat:"SMS — EPI",sub:"Produto",t:`Equipe utilizando os EPIs necessários conforme cada tipo de serviço`,of:[gr(`Ausência, uso inadequado ou utilização incorreta de EPIs`)]},
-     {id:"SG5",cat:"SMS — EPC",sub:"Produto",t:`Atividades de risco possuem os EPCs adequados aos perigos identificados`,of:[gr(`Ausência, instalação inadequada, dano ou utilização insuficiente dos EPCs`)]},
-     {id:"SG6",cat:"SMS — Limpeza, organização e resíduos",sub:"Produto",t:`Frentes de serviço limpas e organizadas; resíduos segregados, acondicionados e destinados conforme procedimentos`,of:[mo(`Frentes de serviço desorganizadas ou gestão inadequada de resíduos`)]},
-     {id:"SG7",cat:"SMS — Resíduos (documentação)",sub:"Produto",t:`Documentação final dos resíduos arquivada e em conformidade, incluindo CTRs`,of:[mo(`Ausência, inconsistência ou arquivamento inadequado da documentação final dos resíduos e dos CTRs`)]},
-     {id:"SG8",cat:"SMS — Guia de SMS / Mudanças climáticas",sub:"Processo",t:`Documento entregue e registrado na ata da reunião de início (PG.PROG.2000 – FAST)`,of:[mo(`Documento obrigatório da etapa não localizado no processo`)]},
-     {id:"SG9",cat:"SMS — VAR",sub:"Processo",t:`Aplicativo de segurança (VAR) preenchido corretamente`,of:[gr(`Não evidenciado o preenchimento do aplicativo`)]},
-     {id:"SG10",cat:"SMS — Recursos Humanos",sub:"Processo",t:`Colaborador/gestor possui todos os cursos obrigatórios de SMS válidos e vigentes`,of:[gr(`Curso obrigatório vencido, pendente ou não realizado; ausência de certificado`)]}
+   {id:"seg_desemp",label:"Segurança · Desempenho",short:"Segurança\nDesempenho",eixo:"Segurança",tipo:"Desempenho",bucket:"seguranca",crit:[
+     {id:"SG1",cat:"SMS — Documentação inicial",t:`Documentação obrigatória de SMS (PGR, PCMSO, PGRCC, Comunicado Prévio de Obras) disponível e de fácil acesso no canteiro`,of:[gr(`Ausência de documentos obrigatórios`)]},
+     {id:"SG2",cat:"SMS — Techsocial (apenas contrato TIVIO)",t:`Documentação dos colaboradores liberada pela equipe de SMS/PMO conforme requisitos`,of:[gr(`Colaborador sem liberação da equipe de SMS/PMO; documentação pendente, incompleta, vencida ou em desacordo`)]},
+     {id:"SG3",cat:"SMS — Documentação de atividades de risco",t:`APR, PT, certificados de Trabalho em Altura e ASO disponíveis e de fácil acesso no canteiro`,of:[gr(`Ausência de documentos obrigatórios`)]},
+     {id:"SG4",cat:"SMS — EPI",t:`Equipe utilizando os EPIs necessários conforme cada tipo de serviço`,of:[gr(`Ausência, uso inadequado ou utilização incorreta de EPIs`)]},
+     {id:"SG5",cat:"SMS — EPC",t:`Atividades de risco possuem os EPCs adequados aos perigos identificados`,of:[gr(`Ausência, instalação inadequada, dano ou utilização insuficiente dos EPCs`)]},
+     {id:"SG6",cat:"SMS — Limpeza, organização e resíduos",t:`Frentes de serviço limpas e organizadas; resíduos segregados, acondicionados e destinados conforme procedimentos`,of:[mo(`Frentes de serviço desorganizadas ou gestão inadequada de resíduos`)]},
+     {id:"SG7",cat:"SMS — Resíduos (documentação)",t:`Documentação final dos resíduos arquivada e em conformidade, incluindo CTRs`,of:[mo(`Ausência, inconsistência ou arquivamento inadequado da documentação final dos resíduos e dos CTRs`)]}
+   ]},
+   {id:"seg_proc",label:"Segurança · Processo",short:"Segurança\nProcesso",eixo:"Segurança",tipo:"Processo",bucket:"seguranca",crit:[
+     {id:"SG8",cat:"SMS — Guia de SMS / Mudanças climáticas",t:`Documento entregue e registrado na ata da reunião de início (PG.PROG.2000 – FAST)`,of:[mo(`Documento obrigatório da etapa não localizado no processo`)]},
+     {id:"SG9",cat:"SMS — VAR",t:`Aplicativo de segurança (VAR) preenchido corretamente`,of:[gr(`Não evidenciado o preenchimento do aplicativo`)]},
+     {id:"SG10",cat:"SMS — Recursos Humanos",t:`Colaborador/gestor possui todos os cursos obrigatórios de SMS válidos e vigentes`,of:[gr(`Curso obrigatório vencido, pendente ou não realizado; ausência de certificado`)]}
    ]}
   ]
  },
@@ -404,7 +406,7 @@ function recorrencias(){
 }
 function renderRecorrencias(){
   const host=$("#recHost"); if(!host)return; const R=recorrencias();
-  const defs=[["produto","Produto","#5B5BD6"],["processo","Processo","#0E9DB6"],["seguranca","Segurança","#C2781C"]];
+  const defs=[["produto","Desempenho","#5B5BD6"],["processo","Processo","#0E9DB6"],["seguranca","Segurança","#C2781C"]];
   if(!(R.produto.length||R.processo.length||R.seguranca.length)){ host.innerHTML=""; return; }
   let h=`<div class="rec-title">NÃO CONFORMIDADES MAIS RECORRENTES</div><div class="rec-grid">`;
   defs.forEach(([k,lbl,col])=>{ h+=`<div class="rec-card"><div class="rec-h" style="color:${col}">${lbl}</div>`;
@@ -490,6 +492,7 @@ function renderCrit(a){
     const obs=row.querySelector(".of-obs"); obs.oninput=()=>{ x.obs=obs.value; scheduleSave(); };
     paintRow(a,row);
   });
+  const back=document.createElement("button"); back.className="act"; back.textContent="← Voltar ao painel"; back.style.marginTop="26px"; back.onclick=()=>$("#btnBack").click(); host.appendChild(back);
 }
 function paintRow(a,row){ const cid=row.dataset.cid,p=row.dataset.p,x=getCell(a,cid,p);
   row.querySelectorAll(".vbtn").forEach(b=>b.className="vbtn"+(x.v===b.dataset.v?` sel-${x.v}`:""));
@@ -550,7 +553,7 @@ function tabelaOfensores(M,list){
   return L;
 }
 function csvOne(a){ const M=MOD(a); return [`AUDITORIA — ${M.nome} — ${ref(a)}`,""].concat(tabelaNotas(M,[a])).concat(["",""]).concat(tabelaOfensores(M,[a])).join("\n"); }
-function csvAll(){ const list=Object.values(store.audits).sort((x,y)=>y.createdAt-x.createdAt); let out=["PAINEL — AUDITORIAS DE QUALIDADE (FAST)"];
+function csvAll(){ const list=Object.values(store.audits).sort((x,y)=>y.createdAt-x.createdAt); let out=["PAINEL — AUDITORIAS DE QUALIDADE (MÉTODO)"];
   ["obras","scala"].forEach(mid=>{ const sub=list.filter(a=>(a.modelo||"obras")===mid); if(!sub.length)return; const M=MODELS[mid];
     out.push(""); out.push("############################################################"); out.push("# MODELO: "+M.nome); out.push("############################################################");
     out=out.concat(tabelaNotas(M,sub)).concat([""]).concat(tabelaOfensores(M,sub)); });
@@ -608,4 +611,3 @@ init();
 </script>
 </body>
 </html>
-
