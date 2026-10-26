@@ -46,6 +46,12 @@
   .stat .n{font-family:var(--font-title);font-size:28px;font-weight:700;line-height:1;} .stat .l{font-size:12px;color:var(--muted);margin-top:6px;} .stat .accent{width:26px;height:3px;border-radius:2px;margin-top:10px;}
 
   .rec-title{font-size:13px;font-weight:600;letter-spacing:.05em;color:var(--muted);margin:2px 0 10px;font-family:var(--font-title);}
+  .filterbar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:20px;}
+  .fb-field{display:flex;flex-direction:column;gap:4px;} .fb-field label{font-size:11px;color:var(--muted);letter-spacing:.02em;}
+  .fb-field select,.fb-field input{background:#fff;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:8px 11px;font-family:inherit;font-size:13.5px;outline:none;min-width:150px;}
+  .fb-field select:focus,.fb-field input:focus{border-color:var(--signal);}
+  .fb-field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235F6C7E' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+  .fb-count{font-size:12px;color:var(--muted);margin-left:auto;align-self:center;}
   .rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:26px;}
   .rec-etapa{font-family:var(--font-title);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-2);margin:12px 0 2px;}
   .rec-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px 16px;}
@@ -147,6 +153,13 @@
       <div class="stat" data-filter="andamento"><div class="n num" id="cAndamento">0</div><div class="l">Em andamento</div><div class="accent" style="background:var(--signal)"></div></div>
       <div class="stat" data-filter="concluida"><div class="n num" id="cConcluida">0</div><div class="l">Concluídas</div><div class="accent" style="background:var(--conforme)"></div></div>
     </div>
+    <div class="filterbar" id="filterbar">
+      <div class="fb-field"><label>Contrato</label><select id="f-contrato"></select></div>
+      <div class="fb-field"><label>Data de</label><input id="f-de" type="date" /></div>
+      <div class="fb-field"><label>Data até</label><input id="f-ate" type="date" /></div>
+      <button class="act ghost sm" id="f-clear">Limpar filtros</button>
+      <span class="fb-count" id="f-count"></span>
+    </div>
     <div id="recHost"></div>
     <div class="list-head"><h2 id="listTitle">TODAS AS AUDITORIAS</h2><div style="display:flex;gap:8px"><button class="act ghost sm" id="btnRefresh">↻ Atualizar</button><button class="act ghost sm" id="btnExportAll">Exportar tabela geral</button></div></div>
     <div id="tableHost"></div>
@@ -167,7 +180,7 @@
     <div class="meta" id="metaGrid">
       <div class="field" data-fld="auditor"><label>Auditor</label><input id="m-auditor" placeholder="Nome" /></div>
       <div class="field" data-fld="proc"><label>Nº Processo FAST</label><input id="m-proc" placeholder="Nº" /></div>
-      <div class="field" data-fld="contrato"><label>Contrato</label><select id="m-contrato"></select></div>
+      <div class="field" data-fld="contrato"><label>Contrato</label><div class="coord-wrap"><select id="m-contrato"></select><button class="coord-add" id="m-contratoadd" title="Adicionar contrato">+</button></div></div>
       <div class="field" data-fld="regional"><label>Regional</label><select id="m-regional"></select></div>
       <div class="field" data-fld="obra"><label>Nome da obra</label><input id="m-obra" placeholder="Nome da obra" /></div>
       <div class="field" data-fld="coord"><label>Coordenador</label><div class="coord-wrap"><select id="m-coord"></select><button class="coord-add" id="m-coordadd" title="Adicionar coordenador">+</button></div></div>
@@ -196,7 +209,7 @@
   <div class="dlg-head"><h3>Nova auditoria</h3><button class="x" id="newClose">&times;</button></div>
   <div class="dlg-body"><div class="dlg-grid">
     <div class="field full"><label>Modelo de auditoria</label><select id="n-modelo"><option value="obras">Gerenciamento de Obras (Varejo)</option><option value="scala">SCALA — Datacenter</option></select></div>
-    <div class="field full" data-nfld="contrato"><label>Contrato</label><select id="n-contrato"></select></div>
+    <div class="field full" data-nfld="contrato"><label>Contrato</label><div class="coord-wrap"><select id="n-contrato"></select><button class="coord-add" id="n-contratoadd" title="Adicionar contrato">+</button></div></div>
     <div class="field" data-nfld="regional"><label>Regional</label><select id="n-regional"></select></div>
     <div class="field" data-nfld="obra"><label>Nome da obra</label><input id="n-obra" placeholder="Nome da obra" /></div>
     <div class="field" data-nfld="coord"><label>Coordenador</label><div class="coord-wrap"><select id="n-coord"></select><button class="coord-add" id="n-coordadd" title="Adicionar">+</button></div></div>
@@ -337,8 +350,18 @@ const STORE_KEY="auditoria_obras_varejo_v1"; /* mantém dados das auditorias de 
 const STATUS_LABEL={aberta:"Aberta",andamento:"Em andamento",concluida:"Concluída"};
 
 /* ---------------------------------------------------------------- */
-let store={audits:{},coordenadores:null};
+let store={audits:{},coordenadores:null,contratos:null};
 let currentId=null, dashFilter="todas", activeTab=null;
+let fContrato="", fDe="", fAte="";
+function filteredList(){
+  return Object.values(store.audits).filter(a=>{
+    if(fContrato && (a.meta.contrato||"")!==fContrato) return false;
+    const dt=a.meta.data||"";
+    if(fDe && (!dt || dt<fDe)) return false;
+    if(fAte && (!dt || dt>fAte)) return false;
+    return true;
+  });
+}
 const $=s=>document.querySelector(s);
 const hasStore=(typeof window.storage!=="undefined"&&window.storage);
 const uid=()=>"a"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -349,13 +372,15 @@ const MOD=a=>MODELS[a.modelo||"obras"];
 let saveTimer=null;
 /* ---- Firebase Realtime Database (cada auditoria é um JSON em auditorias_app/audits/<id>) ---- */
 const FB_ROOT="auditorias_app";
-async function fbLoadAll(){ const snap=await fdb.ref(FB_ROOT).once("value"); const val=snap.val()||{}; const out={audits:{},coordenadores:null};
+async function fbLoadAll(){ const snap=await fdb.ref(FB_ROOT).once("value"); const val=snap.val()||{}; const out={audits:{},coordenadores:null,contratos:null};
   if(val.audits) Object.values(val.audits).forEach(s=>{ try{ const a=JSON.parse(s); out.audits[a.id]=a; }catch(e){} });
   if(val.coordenadores){ try{ out.coordenadores=JSON.parse(val.coordenadores); }catch(e){} }
+  if(val.contratos){ try{ out.contratos=JSON.parse(val.contratos); }catch(e){} }
   return out; }
 async function fbSetAudit(a){ await fdb.ref(FB_ROOT+"/audits/"+a.id).set(JSON.stringify(a)); }
 async function fbDelAudit(id){ await fdb.ref(FB_ROOT+"/audits/"+id).remove(); }
 async function fbSetCoords(c){ await fdb.ref(FB_ROOT+"/coordenadores").set(JSON.stringify(c)); }
+async function fbSetContratos(c){ await fdb.ref(FB_ROOT+"/contratos").set(JSON.stringify(c)); }
 function fbSubscribe(){ fdb.ref(FB_ROOT+"/audits").on("value",snap=>{
   const val=snap.val()||{}; const ids=new Set();
   Object.values(val).forEach(s=>{ try{ const a=JSON.parse(s); ids.add(a.id); if(a.id!==currentId) store.audits[a.id]=a; }catch(e){} });
@@ -372,11 +397,13 @@ async function loadStore(){
     else { const raw=localStorage.getItem(STORE_KEY); if(raw) store=JSON.parse(raw); }
   }catch(e){ if(CLOUD) alert("Não consegui conectar ao Firebase. Confira a databaseURL e as regras do Realtime Database."); }
   if(!store.coordenadores) store.coordenadores=COORD_PADRAO.slice();
+  if(!store.contratos) store.contratos=CONTRATOS.slice();
   Object.values(store.audits).forEach(a=>{ if(!a.modelo) a.modelo="obras"; }); /* migração */ }
 
 function scheduleSave(){ flashSaving(); clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ if(currentId) persistAudit(currentId); else persistCoords(); },450); }
 async function persistAudit(id){ const a=store.audits[id]; if(!a)return; try{ if(CLOUD) await fbSetAudit(a); else await localSaveAll(); flashSaved(CLOUD?"Salvo na nuvem · compartilhado":"Progresso salvo automaticamente"); }catch(e){ flashSaved("Não foi possível salvar",true); } }
 async function persistCoords(){ try{ if(CLOUD) await fbSetCoords(store.coordenadores); else await localSaveAll(); }catch(e){} }
+async function persistContratos(){ try{ if(CLOUD) await fbSetContratos(store.contratos); else await localSaveAll(); }catch(e){} }
 async function persistDelete(id){ try{ if(CLOUD) await fbDelAudit(id); else await localSaveAll(); }catch(e){} }
 function flashSaving(){ const i=$("#savedInd"); if(!i)return; i.classList.remove("on"); $("#savedTxt").textContent="Salvando…"; }
 function flashSaved(t,err){ const i=$("#savedInd"); if(!i)return; i.classList.toggle("on",!err); $("#savedTxt").textContent=t; }
@@ -401,7 +428,7 @@ function ref(a){ if((a.modelo||"obras")==="scala") return a.meta.obra||a.meta.ge
 /* ==== Recorrências: por eixo (Qualidade/Segurança) e etapa (Desempenho/Processo) ==== */
 function recorrencias(){
   const acc={Qualidade:{Desempenho:{},Processo:{}},"Segurança":{Desempenho:{},Processo:{}}};
-  Object.values(store.audits).forEach(a=>{ MOD(a).grupos.forEach(g=>{ const e=g.pEixo||"Qualidade", et=g.pEtapa||"Desempenho"; if(!acc[e]||!acc[e][et])return;
+  filteredList().forEach(a=>{ MOD(a).grupos.forEach(g=>{ const e=g.pEixo||"Qualidade", et=g.pEtapa||"Desempenho"; if(!acc[e]||!acc[e][et])return;
     g.crit.forEach(c=>{ papeis(a).forEach(p=>{ const x=getCell(a,c.id,p.k); if(x.v==="nc") acc[e][et][c.t]=(acc[e][et][c.t]||0)+1; }); }); }); });
   const top=o=>Object.entries(o).sort((x,y)=>y[1]-x[1]).slice(0,5);
   return {Qualidade:{Desempenho:top(acc.Qualidade.Desempenho),Processo:top(acc.Qualidade.Processo)},
@@ -424,16 +451,24 @@ function renderRecorrencias(){
 }
 
 /* ================= DASHBOARD ================= */
+function syncFiltroContratos(){
+  const sel=$("#f-contrato"); if(!sel)return;
+  const cur=fContrato;
+  sel.innerHTML='<option value="">Todos os contratos</option>'+(store.contratos||[]).map(c=>`<option>${c}</option>`).join("");
+  sel.value=cur;
+}
 function renderDash(){
+  syncFiltroContratos();
   renderRecorrencias();
-  const list=Object.values(store.audits).sort((x,y)=>y.createdAt-x.createdAt);
+  const list=filteredList().sort((x,y)=>y.createdAt-x.createdAt);
   const c={todas:list.length,aberta:0,andamento:0,concluida:0}; list.forEach(a=>c[statusOf(a)]++);
   $("#cTodas").textContent=c.todas;$("#cAberta").textContent=c.aberta;$("#cAndamento").textContent=c.andamento;$("#cConcluida").textContent=c.concluida;
+  const fc=$("#f-count"); if(fc){ const fAtivo=(fContrato||fDe||fAte); fc.textContent=fAtivo?`${list.length} auditoria(s) no filtro`:""; }
   document.querySelectorAll(".stat").forEach(s=>s.classList.toggle("active",s.dataset.filter===dashFilter));
   $("#listTitle").textContent=dashFilter==="todas"?"TODAS AS AUDITORIAS":STATUS_LABEL[dashFilter].toUpperCase();
   const rows=dashFilter==="todas"?list:list.filter(a=>statusOf(a)===dashFilter);
   const host=$("#tableHost");
-  if(!rows.length){ host.innerHTML=`<div class="empty"><p>Nenhuma auditoria ${dashFilter==="todas"?"criada ainda":"neste status"}.</p>${dashFilter==="todas"?'<button class="act primary" onclick="document.getElementById(\'btnNew\').click()">+ Criar a primeira</button>':''}</div>`; return; }
+  if(!rows.length){ const filtrando=(fContrato||fDe||fAte); host.innerHTML=`<div class="empty"><p>Nenhuma auditoria ${filtrando?"para os filtros selecionados":(dashFilter==="todas"?"criada ainda":"neste status")}.</p>${(!filtrando&&dashFilter==="todas")?'<button class="act primary" onclick="document.getElementById(\'btnNew\').click()">+ Criar a primeira</button>':''}</div>`; return; }
   let h=`<table class="audits"><thead><tr><th>Referência</th><th>Modelo</th><th class="hide-sm">Coordenador</th><th>Gestor</th><th>Progresso</th><th>Nota geral</th><th>Status</th><th></th></tr></thead><tbody>`;
   rows.forEach(a=>{ const st=statusOf(a),n=notaGeral(a),pct=Math.round(answeredCells(a)/totalCells(a)*100),bd=band(n);
     h+=`<tr class="row" data-open="${a.id}">
@@ -460,7 +495,7 @@ function openAudit(id){
   document.querySelectorAll("#metaGrid [data-fld]").forEach(el=>el.style.display=M.metaFields.includes(el.dataset.fld)?"":"none");
   $("#m-auditor").value=a.meta.auditor||""; $("#m-proc").value=a.meta.proc||""; $("#m-junc").value=a.meta.junc||"";
   $("#m-agencia").value=a.meta.agencia||""; $("#m-data").value=a.meta.data||""; $("#m-gestor").value=a.meta.gestor||""; $("#m-ginome").value=a.meta.ginome||""; $("#m-obra").value=a.meta.obra||"";
-  fillSelect($("#m-contrato"),CONTRATOS,a.meta.contrato); fillSelect($("#m-regional"),REGIONAIS,a.meta.regional);
+  fillSelect($("#m-contrato"),store.contratos,a.meta.contrato); fillSelect($("#m-regional"),REGIONAIS,a.meta.regional);
   fillSelect($("#m-coord"),store.coordenadores,a.meta.coord); $("#m-gi").value=a.meta.gi||"Sim";
   document.querySelector('.rq-g').style.display=M.reqNames===false?"none":(a.modelo==="obras"?"":"none");
   bindMeta(a); renderTabs(a); renderCrit(a); paintAll(); toggleGiField(a);
@@ -514,8 +549,10 @@ function bindMeta(a){
   set("#m-obra","obra",()=>{$("#aTitle").textContent=(a.modelo==="scala"?"SCALA — ":"")+ref(a);});
   $("#m-gi").onchange=()=>{ a.meta.gi=$("#m-gi").value; scheduleSave(); toggleGiField(a); renderCrit(a); paintAll(); };
   $("#m-coordadd").onclick=()=>addCoord($("#m-coord"),v=>{a.meta.coord=v;scheduleSave();});
+  $("#m-contratoadd").onclick=()=>addContrato($("#m-contrato"),v=>{a.meta.contrato=v;$("#aTitle").textContent=ref(a);scheduleSave();});
 }
 function addCoord(sel,cb){ const nome=(prompt("Nome do novo coordenador:")||"").trim(); if(!nome)return; if(!store.coordenadores.includes(nome)) store.coordenadores.push(nome); persistCoords(); fillSelect(sel,store.coordenadores,nome); if(cb)cb(nome); }
+function addContrato(sel,cb){ const nome=(prompt("Nome do novo contrato:")||"").trim(); if(!nome)return; if(!store.contratos.includes(nome)) store.contratos.push(nome); persistContratos(); fillSelect(sel,store.contratos,nome); if(cb)cb(nome); }
 
 function notesMatrixHTML(a){
   const M=MOD(a); const cols=M.matrixOrder.map(id=>M.grupos.find(g=>g.id===id)); const rows=papeis(a);
@@ -579,18 +616,23 @@ function validNew(){ const m=$("#n-modelo").value; const req=[]; if(m==="obras")
 async function init(){
   await loadStore(); renderDash(); if(CLOUD) fbSubscribe();
   document.querySelectorAll(".stat").forEach(s=>s.onclick=()=>{ dashFilter=s.dataset.filter; renderDash(); });
+  $("#f-contrato").onchange=()=>{ fContrato=$("#f-contrato").value; renderDash(); };
+  $("#f-de").onchange=()=>{ fDe=$("#f-de").value; renderDash(); };
+  $("#f-ate").onchange=()=>{ fAte=$("#f-ate").value; renderDash(); };
+  $("#f-clear").onclick=()=>{ fContrato=""; fDe=""; fAte=""; $("#f-contrato").value=""; $("#f-de").value=""; $("#f-ate").value=""; renderDash(); };
   $("#btnBack").onclick=()=>{ const a=store.audits[currentId];
     if(a&&MOD(a).reqNames!==false&&a.modelo==="obras"&&(!(a.meta.gestor||"").trim()||(giOn(a)&&!(a.meta.ginome||"").trim()))){ if(!confirm("Os nomes de Gestor/Gestor GI são obrigatórios e estão em branco. Sair mesmo assim?"))return; }
     $("#viewAudit").classList.add("hidden"); $("#viewDash").classList.remove("hidden"); renderDash();
   };
   $("#btnNew").onclick=()=>{
     $("#n-modelo").value="obras";
-    fillSelect($("#n-contrato"),CONTRATOS,CONTRATOS[0]); fillSelect($("#n-regional"),REGIONAIS,REGIONAIS[0]); fillSelect($("#n-coord"),store.coordenadores,store.coordenadores[0]);
+    fillSelect($("#n-contrato"),store.contratos,store.contratos[0]); fillSelect($("#n-regional"),REGIONAIS,REGIONAIS[0]); fillSelect($("#n-coord"),store.coordenadores,store.coordenadores[0]);
     $("#n-gestor").value=""; $("#n-ginome").value=""; $("#n-gi").value="Sim"; $("#n-data").value=new Date().toISOString().slice(0,10);
     document.querySelectorAll("#newDlg input").forEach(e=>e.classList.remove("err")); syncNewFields(); $("#newDlg").showModal();
   };
   $("#n-modelo").onchange=syncNewFields; $("#n-gi").onchange=syncNewFields;
   $("#n-coordadd").onclick=()=>addCoord($("#n-coord"));
+  $("#n-contratoadd").onclick=()=>addContrato($("#n-contrato"));
   $("#newClose").onclick=$("#newCancel").onclick=()=>$("#newDlg").close();
   $("#newCreate").onclick=()=>{ if(!validNew())return; const m=$("#n-modelo").value; const id=uid();
     store.audits[id]={id,modelo:m,createdAt:Date.now(),finalized:false,answers:{},meta:{
