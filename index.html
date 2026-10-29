@@ -250,7 +250,7 @@ if(CLOUD){ try{ firebase.initializeApp(firebaseConfig); fdb=firebase.database();
 /* ================================================================
    LISTAS SUSPENSAS — edite com seus valores reais
    ================================================================ */
-const CONTRATOS = ["Localiza","Santander","Itaú","Zamp","AutoZone","TIVIO","Riachuelo","Renner"];
+const CONTRATOS = ["Localiza","Santander","Itaú","Zamp","AutoZone","TIVIO","Riachuelo","Renner","SCALA"];
 const REGIONAIS = ["Sudeste","Sul","Nordeste","Centro-Oeste","Norte"];
 const COORD_PADRAO = ["Leticia Sposito","Lorenna Khiara","Hugo Silva","Alexandre Oliveira"];
 
@@ -316,7 +316,7 @@ const MODELS = {
  },
  scala:{
   id:"scala", nome:"SCALA — Datacenter", dual:false, locField:{key:"obra",label:"Nome da obra"},
-  metaFields:["auditor","obra","coord","data","gestor"],
+  metaFields:["auditor","contrato","obra","coord","data","gestor"],
   matrixOrder:["processo","desempenho"],
   grupos:[
    {id:"processo",label:"Processo",short:"Processo",eixo:"Processo",tipo:"—",bucket:"processo",pEixo:"Qualidade",pEtapa:"Processo",crit:[
@@ -423,7 +423,7 @@ function totalCells(a){ return allCrit(a).length*papeis(a).length; }
 function answeredCells(a){ let n=0; allCrit(a).forEach(c=>papeis(a).forEach(p=>{ if(getCell(a,c.id,p.k).v) n++; })); return n; }
 function pendingOf(a){ let n=0; allCrit(a).forEach(c=>papeis(a).forEach(p=>{ const x=getCell(a,c.id,p.k); if(x.v==="nc"&&x.of==null) n++; })); return n; }
 function statusOf(a){ if(a.finalized) return "concluida"; return answeredCells(a)===0?"aberta":"andamento"; }
-function ref(a){ if((a.modelo||"obras")==="scala") return a.meta.obra||a.meta.gestor||"SCALA"; return a.meta.contrato||a.meta.gestor||MOD(a).nome; }
+function ref(a){ if((a.modelo||"obras")==="scala") return a.meta.contrato||a.meta.obra||a.meta.gestor||"SCALA"; return a.meta.contrato||a.meta.gestor||MOD(a).nome; }
 
 /* ==== Recorrências: por eixo (Qualidade/Segurança) e etapa (Desempenho/Processo) ==== */
 function recorrencias(){
@@ -454,7 +454,10 @@ function renderRecorrencias(){
 function syncFiltroContratos(){
   const sel=$("#f-contrato"); if(!sel)return;
   const cur=fContrato;
-  sel.innerHTML='<option value="">Todos os contratos</option>'+(store.contratos||[]).map(c=>`<option>${c}</option>`).join("");
+  const set=new Set(store.contratos||[]);
+  Object.values(store.audits).forEach(a=>{ if(a.meta&&a.meta.contrato) set.add(a.meta.contrato); });
+  const opts=[...set].sort((x,y)=>x.localeCompare(y,'pt'));
+  sel.innerHTML='<option value="">Todos os contratos</option>'+opts.map(c=>`<option>${c}</option>`).join("");
   sel.value=cur;
 }
 function renderDash(){
@@ -472,7 +475,7 @@ function renderDash(){
   let h=`<table class="audits"><thead><tr><th>Referência</th><th>Modelo</th><th class="hide-sm">Coordenador</th><th>Gestor</th><th>Progresso</th><th>Nota geral</th><th>Status</th><th></th></tr></thead><tbody>`;
   rows.forEach(a=>{ const st=statusOf(a),n=notaGeral(a),pct=Math.round(answeredCells(a)/totalCells(a)*100),bd=band(n);
     h+=`<tr class="row" data-open="${a.id}">
-      <td class="contract-cell">${ref(a)}<div class="sub-cell">${(a.modelo==="scala"?a.meta.obra:a.meta.regional)||""}</div></td>
+      <td class="contract-cell">${ref(a)}<div class="sub-cell">${(a.modelo==="scala"?((a.meta.obra&&a.meta.obra!==ref(a))?a.meta.obra:""):a.meta.regional)||""}</div></td>
       <td><span class="mbadge ${a.modelo}">${a.modelo==="scala"?"SCALA":"Obras"}</span></td>
       <td class="hide-sm sub-cell">${a.meta.coord||"—"}</td>
       <td>${a.meta.gestor||"—"}${giOn(a)&&a.meta.ginome?`<div class="sub-cell">GI: ${a.meta.ginome}</div>`:""}</td>
@@ -636,7 +639,7 @@ async function init(){
   $("#newClose").onclick=$("#newCancel").onclick=()=>$("#newDlg").close();
   $("#newCreate").onclick=()=>{ if(!validNew())return; const m=$("#n-modelo").value; const id=uid();
     store.audits[id]={id,modelo:m,createdAt:Date.now(),finalized:false,answers:{},meta:{
-      contrato:m==="obras"?$("#n-contrato").value:"",regional:m==="obras"?$("#n-regional").value:"",obra:m==="scala"?$("#n-obra").value.trim():"",coord:$("#n-coord").value,
+      contrato:$("#n-contrato").value,regional:m==="obras"?$("#n-regional").value:"",obra:m==="scala"?$("#n-obra").value.trim():"",coord:$("#n-coord").value,
       gestor:$("#n-gestor").value.trim(),gi:m==="obras"?$("#n-gi").value:"Não",ginome:$("#n-ginome").value.trim(),
       data:$("#n-data").value,auditor:"",proc:"",junc:"",agencia:""}};
     scheduleSave(); $("#newDlg").close(); persistAudit(id); openAudit(id);
